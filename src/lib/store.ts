@@ -42,7 +42,7 @@ export interface Appointment {
   date: string;
   userId: string;
   userName: string;
-  status: "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "cancelled";
 }
 
 export interface GalleryImage {
@@ -180,7 +180,12 @@ interface AppState {
   // Appointments
   appointments: Appointment[];
   addAppointment: (serviceId: string, serviceName: string, date: string) => void;
+  confirmAppointment: (id: string) => void;
   cancelAppointment: (id: string) => void;
+
+  // Site Settings
+  homeButtonText: string;
+  setHomeButtonText: (text: string) => void;
 
   // Gallery
   gallery: GalleryImage[];
@@ -397,9 +402,16 @@ export const useAppStore = create<AppState>((set, get) => {
         date,
         userId: user.id,
         userName: user.name,
-        status: "confirmed",
+        status: "pending",
       };
       const appointments = [...get().appointments, appointment];
+      set({ appointments });
+      saveToStorage("labella_appointments", appointments);
+    },
+    confirmAppointment: (id) => {
+      const appointments = get().appointments.map((a) =>
+        a.id === id ? { ...a, status: "confirmed" as const } : a
+      );
       set({ appointments });
       saveToStorage("labella_appointments", appointments);
     },
@@ -409,6 +421,13 @@ export const useAppStore = create<AppState>((set, get) => {
       );
       set({ appointments });
       saveToStorage("labella_appointments", appointments);
+    },
+
+    // Site Settings
+    homeButtonText: loadFromStorage<string>("labella_home_button_text", "Home"),
+    setHomeButtonText: (text) => {
+      set({ homeButtonText: text });
+      saveToStorage("labella_home_button_text", text);
     },
 
     // Gallery

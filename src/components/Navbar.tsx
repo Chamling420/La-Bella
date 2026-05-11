@@ -34,8 +34,8 @@ import {
   UserCircle,
 } from "lucide-react";
 
-const NAV_ITEMS: { label: string; page: Page; icon: React.ReactNode; roles?: string[] }[] = [
-  { label: "Home", page: "home", icon: <Home className="h-4 w-4" /> },
+const NAV_ITEMS: { label: string; page: Page; icon: React.ReactNode; roles?: string[]; homeKey?: boolean }[] = [
+  { label: "Home", page: "home", icon: <Home className="h-4 w-4" />, homeKey: true },
   { label: "Services", page: "services", icon: <Sparkles className="h-4 w-4" /> },
   { label: "Products", page: "products", icon: <ShoppingBag className="h-4 w-4" /> },
   { label: "Appointments", page: "appointments", icon: <CalendarDays className="h-4 w-4" /> },
@@ -46,7 +46,7 @@ const NAV_ITEMS: { label: string; page: Page; icon: React.ReactNode; roles?: str
 ];
 
 export function Navbar() {
-  const { currentPage, setCurrentPage, currentUser, logout, cart } = useAppStore();
+  const { currentPage, setCurrentPage, currentUser, logout, cart, homeButtonText } = useAppStore();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -85,7 +85,7 @@ export function Navbar() {
               }`}
             >
               {item.icon}
-              {item.label}
+              {item.homeKey ? homeButtonText : item.label}
             </button>
           ))}
         </nav>
@@ -187,7 +187,7 @@ export function Navbar() {
                     }`}
                   >
                     {item.icon}
-                    {item.label}
+                    {item.homeKey ? homeButtonText : item.label}
                   </button>
                 ))}
                 {currentUser ? (

@@ -68,6 +68,8 @@ import {
   Crown,
   Leaf,
   PenTool,
+  Clock,
+  Settings,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -158,7 +160,10 @@ export default function AdminPanel() {
     addProduct,
     updateProduct,
     deleteProduct,
+    confirmAppointment,
     cancelAppointment,
+    homeButtonText,
+    setHomeButtonText,
   } = useAppStore();
 
   // Service dialog state
@@ -170,6 +175,9 @@ export default function AdminPanel() {
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
+
+  // Home button text state
+  const [homeTextEditing, setHomeTextEditing] = useState(homeButtonText);
 
   // ===== Access Control =====
   if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'superadmin')) {
@@ -310,7 +318,12 @@ export default function AdminPanel() {
     toast.success('Product deleted');
   };
 
-  // ===== Appointment Handler =====
+  // ===== Appointment Handlers =====
+  const handleConfirmAppointment = (id: string) => {
+    confirmAppointment(id);
+    toast.success('Appointment confirmed');
+  };
+
   const handleCancelAppointment = (id: string) => {
     cancelAppointment(id);
     toast.success('Appointment cancelled');
@@ -385,6 +398,10 @@ export default function AdminPanel() {
             <TabsTrigger value="users" className="flex-1 sm:flex-none gap-1.5">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1 sm:flex-none gap-1.5">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 
@@ -804,65 +821,117 @@ export default function AdminPanel() {
                                       className={
                                         appointment.status === 'confirmed'
                                           ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                          : 'bg-red-100 text-red-600 border-red-200 hover:bg-red-100 line-through'
+                                          : appointment.status === 'pending'
+                                            ? 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                            : 'bg-red-100 text-red-600 border-red-200 hover:bg-red-100 line-through'
                                       }
                                     >
                                       {appointment.status === 'confirmed' ? (
                                         <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                      ) : appointment.status === 'pending' ? (
+                                        <Clock className="w-3.5 h-3.5 mr-1" />
                                       ) : (
                                         <XCircle className="w-3.5 h-3.5 mr-1" />
                                       )}
-                                      {appointment.status === 'confirmed' ? 'Confirmed' : 'Cancelled'}
+                                      {appointment.status === 'confirmed' ? 'Confirmed' : appointment.status === 'pending' ? 'Pending' : 'Cancelled'}
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    {appointment.status === 'confirmed' ? (
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-full"
-                                          >
-                                            <XCircle className="w-4 h-4 mr-1.5" />
-                                            Cancel
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              Are you sure you want to cancel the{' '}
-                                              <span className="font-semibold text-foreground">
-                                                {appointment.serviceName}
-                                              </span>{' '}
-                                              appointment for{' '}
-                                              <span className="font-semibold text-foreground">
-                                                {appointment.userName}
-                                              </span>{' '}
-                                              on{' '}
-                                              <span className="font-semibold text-foreground">
-                                                {formatDate(appointment.date)}
-                                              </span>
-                                              ? This action cannot be undone.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel className="rounded-full">
-                                              Keep Appointment
-                                            </AlertDialogCancel>
-                                            <AlertDialogAction
-                                              onClick={() => handleCancelAppointment(appointment.id)}
-                                              className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                    <div className="flex items-center justify-end gap-2">
+                                      {appointment.status === 'pending' && (
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 rounded-full"
                                             >
-                                              Yes, Cancel
-                                            </AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">—</span>
-                                    )}
+                                              <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                                              Confirm
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Confirm Appointment</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Are you sure you want to confirm the{' '}
+                                                <span className="font-semibold text-foreground">
+                                                  {appointment.serviceName}
+                                                </span>{' '}
+                                                appointment for{' '}
+                                                <span className="font-semibold text-foreground">
+                                                  {appointment.userName}
+                                                </span>{' '}
+                                                on{' '}
+                                                <span className="font-semibold text-foreground">
+                                                  {formatDate(appointment.date)}
+                                                </span>
+                                                ?
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel className="rounded-full">
+                                                Cancel
+                                              </AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => handleConfirmAppointment(appointment.id)}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                                              >
+                                                Yes, Confirm
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
+                                      {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-full"
+                                            >
+                                              <XCircle className="w-4 h-4 mr-1.5" />
+                                              Cancel
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Are you sure you want to cancel the{' '}
+                                                <span className="font-semibold text-foreground">
+                                                  {appointment.serviceName}
+                                                </span>{' '}
+                                                appointment for{' '}
+                                                <span className="font-semibold text-foreground">
+                                                  {appointment.userName}
+                                                </span>{' '}
+                                                on{' '}
+                                                <span className="font-semibold text-foreground">
+                                                  {formatDate(appointment.date)}
+                                                </span>
+                                                ? This action cannot be undone.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel className="rounded-full">
+                                                Keep Appointment
+                                              </AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => handleCancelAppointment(appointment.id)}
+                                                className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                              >
+                                                Yes, Cancel
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
+                                      {appointment.status === 'cancelled' && (
+                                        <span className="text-xs text-muted-foreground">—</span>
+                                      )}
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -909,61 +978,112 @@ export default function AdminPanel() {
                                     className={
                                       appointment.status === 'confirmed'
                                         ? 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                        : 'bg-red-100 text-red-600 border-red-200 hover:bg-red-100 line-through'
+                                        : appointment.status === 'pending'
+                                          ? 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                          : 'bg-red-100 text-red-600 border-red-200 hover:bg-red-100 line-through'
                                     }
                                   >
                                     {appointment.status === 'confirmed' ? (
                                       <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                    ) : appointment.status === 'pending' ? (
+                                      <Clock className="w-3.5 h-3.5 mr-1" />
                                     ) : (
                                       <XCircle className="w-3.5 h-3.5 mr-1" />
                                     )}
-                                    {appointment.status === 'confirmed' ? 'Confirmed' : 'Cancelled'}
+                                    {appointment.status === 'confirmed' ? 'Confirmed' : appointment.status === 'pending' ? 'Pending' : 'Cancelled'}
                                   </Badge>
-                                  {appointment.status === 'confirmed' && (
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-full text-xs h-7"
-                                        >
-                                          <XCircle className="w-3.5 h-3.5 mr-1" />
-                                          Cancel
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Are you sure you want to cancel the{' '}
-                                            <span className="font-semibold text-foreground">
-                                              {appointment.serviceName}
-                                            </span>{' '}
-                                            appointment for{' '}
-                                            <span className="font-semibold text-foreground">
-                                              {appointment.userName}
-                                            </span>{' '}
-                                            on{' '}
-                                            <span className="font-semibold text-foreground">
-                                              {formatDate(appointment.date)}
-                                            </span>
-                                            ? This action cannot be undone.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel className="rounded-full">
-                                            Keep Appointment
-                                          </AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => handleCancelAppointment(appointment.id)}
-                                            className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                  <div className="flex flex-col gap-1.5">
+                                    {appointment.status === 'pending' && (
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 rounded-full text-xs h-7"
                                           >
-                                            Yes, Cancel
-                                          </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  )}
+                                            <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                            Confirm
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Confirm Appointment</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to confirm the{' '}
+                                              <span className="font-semibold text-foreground">
+                                                {appointment.serviceName}
+                                              </span>{' '}
+                                              appointment for{' '}
+                                              <span className="font-semibold text-foreground">
+                                                {appointment.userName}
+                                              </span>{' '}
+                                              on{' '}
+                                              <span className="font-semibold text-foreground">
+                                                {formatDate(appointment.date)}
+                                              </span>
+                                              ?
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel className="rounded-full">
+                                              Cancel
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => handleConfirmAppointment(appointment.id)}
+                                              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                                            >
+                                              Yes, Confirm
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    )}
+                                    {(appointment.status === 'pending' || appointment.status === 'confirmed') && (
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 rounded-full text-xs h-7"
+                                          >
+                                            <XCircle className="w-3.5 h-3.5 mr-1" />
+                                            Cancel
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Are you sure you want to cancel the{' '}
+                                              <span className="font-semibold text-foreground">
+                                                {appointment.serviceName}
+                                              </span>{' '}
+                                              appointment for{' '}
+                                              <span className="font-semibold text-foreground">
+                                                {appointment.userName}
+                                              </span>{' '}
+                                              on{' '}
+                                              <span className="font-semibold text-foreground">
+                                                {formatDate(appointment.date)}
+                                              </span>
+                                              ? This action cannot be undone.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel className="rounded-full">
+                                              Keep Appointment
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => handleCancelAppointment(appointment.id)}
+                                              className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                            >
+                                              Yes, Cancel
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </CardContent>
@@ -1081,6 +1201,60 @@ export default function AdminPanel() {
                   )}
                 </>
               )}
+            </motion.div>
+          </TabsContent>
+
+          {/* ===== TAB 5: Settings ===== */}
+          <TabsContent value="settings">
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold">Site Settings</h2>
+                <p className="text-sm text-muted-foreground">Customize the appearance of your website</p>
+              </div>
+
+              <div className="grid gap-6 max-w-lg">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-primary" />
+                      Navigation Button Text
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="home-btn-text">Home Button Text</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Change the text displayed on the &quot;Home&quot; navigation button. This affects both desktop and mobile navigation.
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          id="home-btn-text"
+                          value={homeTextEditing}
+                          onChange={(e) => setHomeTextEditing(e.target.value)}
+                          placeholder="Home"
+                          className="flex-1"
+                        />
+                        <Button
+                          onClick={() => {
+                            if (!homeTextEditing.trim()) {
+                              toast.error('Button text cannot be empty');
+                              return;
+                            }
+                            setHomeButtonText(homeTextEditing.trim());
+                            toast.success('Home button text updated');
+                          }}
+                          className="rounded-full shadow-lg shadow-primary/25 shrink-0"
+                        >
+                          Save
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Current preview: <Badge variant="secondary">{homeButtonText}</Badge>
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
           </TabsContent>
         </Tabs>

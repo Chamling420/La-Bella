@@ -61,6 +61,8 @@ import {
   XCircle,
   CheckCircle2,
   AlertTriangle,
+  Clock,
+  Settings,
 } from 'lucide-react';
 
 // ==================== HELPERS ====================
@@ -113,7 +115,10 @@ export default function SuperAdminPanel() {
     addProduct,
     updateProduct,
     deleteProduct,
+    confirmAppointment,
     cancelAppointment,
+    homeButtonText,
+    setHomeButtonText,
   } = useAppStore();
 
   // ---- Access Control ----
@@ -181,6 +186,11 @@ export default function SuperAdminPanel() {
             <span className="hidden sm:inline">All Appointments</span>
             <span className="sm:hidden">Appts</span>
           </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-2">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Settings</span>
+            <span className="sm:hidden">Settings</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* ===== TAB 1: MANAGE USERS ===== */}
@@ -217,7 +227,16 @@ export default function SuperAdminPanel() {
         <TabsContent value="appointments">
           <AllAppointmentsTab
             appointments={appointments}
+            confirmAppointment={confirmAppointment}
             cancelAppointment={cancelAppointment}
+          />
+        </TabsContent>
+
+        {/* ===== TAB 5: SETTINGS ===== */}
+        <TabsContent value="settings">
+          <SettingsTab
+            homeButtonText={homeButtonText}
+            setHomeButtonText={setHomeButtonText}
           />
         </TabsContent>
       </Tabs>
@@ -956,24 +975,39 @@ function ManageProductsTab({
 
 function AllAppointmentsTab({
   appointments,
+  confirmAppointment,
   cancelAppointment,
 }: {
   appointments: Appointment[];
+  confirmAppointment: (id: string) => void;
   cancelAppointment: (id: string) => void;
 }) {
   const [cancelId, setCancelId] = useState<string | null>(null);
-  const [cancelInfo, setCancelInfo] = useState({
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [actionInfo, setActionInfo] = useState({
     serviceName: '',
     date: '',
+    userName: '',
   });
 
   const handleCancelClick = (
     id: string,
     serviceName: string,
-    date: string
+    date: string,
+    userName: string
   ) => {
     setCancelId(id);
-    setCancelInfo({ serviceName, date });
+    setActionInfo({ serviceName, date, userName });
+  };
+
+  const handleConfirmClick = (
+    id: string,
+    serviceName: string,
+    date: string,
+    userName: string
+  ) => {
+    setConfirmId(id);
+    setActionInfo({ serviceName, date, userName });
   };
 
   const handleCancelConfirm = () => {
@@ -981,10 +1015,22 @@ function AllAppointmentsTab({
       cancelAppointment(cancelId);
       toast.success('Appointment cancelled');
       setCancelId(null);
-      setCancelInfo({ serviceName: '', date: '' });
+      setActionInfo({ serviceName: '', date: '', userName: '' });
     }
   };
 
+  const handleConfirmConfirm = () => {
+    if (confirmId) {
+      confirmAppointment(confirmId);
+      toast.success('Appointment confirmed');
+      setConfirmId(null);
+      setActionInfo({ serviceName: '', date: '', userName: '' });
+    }
+  };
+
+  const pendingCount = appointments.filter(
+    (a) => a.status === 'pending'
+  ).length;
   const confirmedCount = appointments.filter(
     (a) => a.status === 'confirmed'
   ).length;
@@ -998,9 +1044,9 @@ function AllAppointmentsTab({
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
-            <CalendarDays className="h-5 w-5 text-rose-500" />
-            <span className="text-2xl font-bold">{appointments.length}</span>
-            <span className="text-xs text-muted-foreground">Total</span>
+            <Clock className="h-5 w-5 text-amber-500" />
+            <span className="text-2xl font-bold">{pendingCount}</span>
+            <span className="text-xs text-muted-foreground">Pending</span>
           </CardContent>
         </Card>
         <Card>
@@ -1076,6 +1122,11 @@ function AllAppointmentsTab({
                             <CheckCircle2 className="h-3 w-3" />
                             Confirmed
                           </Badge>
+                        ) : apt.status === 'pending' ? (
+                          <Badge className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                            <Clock className="h-3 w-3" />
+                            Pending
+                          </Badge>
                         ) : (
                           <Badge className="gap-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
                             <XCircle className="h-3 w-3" />
@@ -1084,23 +1135,44 @@ function AllAppointmentsTab({
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {apt.status === 'confirmed' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() =>
-                              handleCancelClick(
-                                apt.id,
-                                apt.serviceName,
-                                apt.date
-                              )
-                            }
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                            Cancel
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-1">
+                          {apt.status === 'pending' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                              onClick={() =>
+                                handleConfirmClick(
+                                  apt.id,
+                                  apt.serviceName,
+                                  apt.date,
+                                  apt.userName
+                                )
+                              }
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Confirm
+                            </Button>
+                          )}
+                          {(apt.status === 'pending' || apt.status === 'confirmed') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() =>
+                                handleCancelClick(
+                                  apt.id,
+                                  apt.serviceName,
+                                  apt.date,
+                                  apt.userName
+                                )
+                              }
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                              Cancel
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1111,13 +1183,57 @@ function AllAppointmentsTab({
         </CardContent>
       </Card>
 
+      {/* Confirm Appointment AlertDialog */}
+      <AlertDialog
+        open={!!confirmId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmId(null);
+            setActionInfo({ serviceName: '', date: '', userName: '' });
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle2 className="h-5 w-5" />
+              Confirm Appointment
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to confirm the appointment for{' '}
+              <strong className="text-foreground">
+                {actionInfo.serviceName}
+              </strong>{' '}
+              for{' '}
+              <strong className="text-foreground">
+                {actionInfo.userName}
+              </strong>{' '}
+              on{' '}
+              <strong className="text-foreground">
+                {actionInfo.date ? formatDate(actionInfo.date) : ''}
+              </strong>
+              ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Don&apos;t Confirm</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmConfirm}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              Yes, Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Cancel Appointment AlertDialog */}
       <AlertDialog
         open={!!cancelId}
         onOpenChange={(open) => {
           if (!open) {
             setCancelId(null);
-            setCancelInfo({ serviceName: '', date: '' });
+            setActionInfo({ serviceName: '', date: '', userName: '' });
           }
         }}
       >
@@ -1130,11 +1246,15 @@ function AllAppointmentsTab({
             <AlertDialogDescription>
               Are you sure you want to cancel the appointment for{' '}
               <strong className="text-foreground">
-                {cancelInfo.serviceName}
+                {actionInfo.serviceName}
+              </strong>{' '}
+              for{' '}
+              <strong className="text-foreground">
+                {actionInfo.userName}
               </strong>{' '}
               on{' '}
               <strong className="text-foreground">
-                {cancelInfo.date ? formatDate(cancelInfo.date) : ''}
+                {actionInfo.date ? formatDate(actionInfo.date) : ''}
               </strong>
               ? This action cannot be undone.
             </AlertDialogDescription>
@@ -1150,6 +1270,68 @@ function AllAppointmentsTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+}
+
+// ==================== TAB 5: SETTINGS ====================
+
+function SettingsTab({
+  homeButtonText,
+  setHomeButtonText,
+}: {
+  homeButtonText: string;
+  setHomeButtonText: (text: string) => void;
+}) {
+  const [homeTextEditing, setHomeTextEditing] = useState(homeButtonText);
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-rose-500" />
+            Site Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <Label htmlFor="sa-home-btn-text" className="text-sm font-medium">
+              Home Navigation Button Text
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Change the text displayed on the &quot;Home&quot; navigation button. This affects both desktop and mobile navigation across the entire site.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                id="sa-home-btn-text"
+                value={homeTextEditing}
+                onChange={(e) => setHomeTextEditing(e.target.value)}
+                placeholder="Home"
+                className="flex-1"
+              />
+              <Button
+                onClick={() => {
+                  if (!homeTextEditing.trim()) {
+                    toast.error('Button text cannot be empty');
+                    return;
+                  }
+                  setHomeButtonText(homeTextEditing.trim());
+                  toast.success('Home button text updated');
+                }}
+                className="gap-2 rounded-full"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Save
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Current value:</span>
+              <Badge variant="secondary">{homeButtonText}</Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

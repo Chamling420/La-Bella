@@ -59,7 +59,7 @@ function formatDate(dateStr: string): string {
 }
 
 export default function AppointmentsPage() {
-  const { currentUser, appointments, services, cancelAppointment, setCurrentPage } =
+  const { currentUser, appointments, services, confirmAppointment, cancelAppointment, setCurrentPage } =
     useAppStore();
   const [activeTab, setActiveTab] = useState('all');
 
@@ -104,17 +104,26 @@ export default function AppointmentsPage() {
 
   // Filter by tab
   const filteredAppointments = sortedAppointments.filter((a) => {
+    if (activeTab === 'pending') return a.status === 'pending';
     if (activeTab === 'confirmed') return a.status === 'confirmed';
     if (activeTab === 'cancelled') return a.status === 'cancelled';
     return true;
   });
 
+  const pendingCount = sortedAppointments.filter(
+    (a) => a.status === 'pending'
+  ).length;
   const confirmedCount = sortedAppointments.filter(
     (a) => a.status === 'confirmed'
   ).length;
   const cancelledCount = sortedAppointments.filter(
     (a) => a.status === 'cancelled'
   ).length;
+
+  const handleConfirm = (id: string) => {
+    confirmAppointment(id);
+    toast.success('Appointment confirmed');
+  };
 
   const handleCancel = (id: string) => {
     cancelAppointment(id);
@@ -167,6 +176,12 @@ export default function AppointmentsPage() {
                 {sortedAppointments.length}
               </span>
             </TabsTrigger>
+            <TabsTrigger value="pending" className="flex-1 sm:flex-none">
+              Pending
+              <span className="ml-1.5 text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5">
+                {pendingCount}
+              </span>
+            </TabsTrigger>
             <TabsTrigger value="confirmed" className="flex-1 sm:flex-none">
               Confirmed
               <span className="ml-1.5 text-xs bg-emerald-100 text-emerald-700 rounded-full px-1.5 py-0.5">
@@ -181,7 +196,7 @@ export default function AppointmentsPage() {
             </TabsTrigger>
           </TabsList>
 
-          {['all', 'confirmed', 'cancelled'].map((tab) => (
+          {['all', 'pending', 'confirmed', 'cancelled'].map((tab) => (
             <TabsContent key={tab} value={tab}>
               {filteredAppointments.length === 0 ? (
                 <motion.div
@@ -200,14 +215,16 @@ export default function AppointmentsPage() {
                       ? "You don't have any cancelled appointments."
                       : tab === 'confirmed'
                         ? "You don't have any confirmed appointments. Book one today!"
-                        : "You haven't booked any appointments yet."}
+                        : tab === 'pending'
+                          ? "You don't have any pending appointments."
+                          : "You haven't booked any appointments yet."}
                   </p>
                   {tab !== 'cancelled' && (
                     <Button
                       onClick={() => setCurrentPage('services')}
                       className="rounded-full px-8 shadow-lg shadow-primary/25"
                     >
-                      <CalendarDays className="w-4 h-4 mr-2" />
+                      <CalendarDays className="w-4 w-4 mr-2" />
                       Book Appointment
                     </Button>
                   )}
@@ -220,8 +237,11 @@ export default function AppointmentsPage() {
                   className="grid gap-4"
                 >
                   {filteredAppointments.map((appointment) => {
+                    const canConfirm =
+                      appointment.status === 'pending' &&
+                      isAdmin;
                     const canCancel =
-                      appointment.status === 'confirmed' &&
+                      (appointment.status === 'pending' || appointment.status === 'confirmed') &&
                       (isAdmin || appointment.userId === currentUser.id);
                     const duration = getServiceDuration(appointment.serviceId);
 
@@ -285,23 +305,77 @@ export default function AppointmentsPage() {
                                   variant={
                                     appointment.status === 'confirmed'
                                       ? 'default'
-                                      : 'secondary'
+                                      : appointment.status === 'pending'
+                                        ? 'secondary'
+                                        : 'secondary'
                                   }
-                                  className={`${
+                                  className={
                                     appointment.status === 'confirmed'
                                       ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
-                                      : 'bg-red-100 text-red-600 hover:bg-red-100 border-red-200 line-through'
-                                  }`}
+                                      : appointment.status === 'pending'
+                                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200'
+                                        : 'bg-red-100 text-red-600 hover:bg-red-100 border-red-200 line-through'
+                                  }
                                 >
                                   {appointment.status === 'confirmed' ? (
                                     <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                  ) : appointment.status === 'pending' ? (
+                                    <Clock className="w-3.5 h-3.5 mr-1" />
                                   ) : (
                                     <XCircle className="w-3.5 h-3.5 mr-1" />
                                   )}
                                   {appointment.status === 'confirmed'
                                     ? 'Confirmed'
-                                    : 'Cancelled'}
+                                    : appointment.status === 'pending'
+                                      ? 'Pending'
+                                      : 'Cancelled'}
                                 </Badge>
+
+                                {canConfirm && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 rounded-full"
+                                      >
+                                        <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                                        Confirm
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                          Confirm Appointment
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to confirm the{' '}
+                                          <span className="font-semibold text-foreground">
+                                            {appointment.serviceName}
+                                          </span>{' '}
+                                          appointment on{' '}
+                                          <span className="font-semibold text-foreground">
+                                            {formatDate(appointment.date)}
+                                          </span>
+                                          ?
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="rounded-full">
+                                          Don&apos;t Confirm
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() =>
+                                            handleConfirm(appointment.id)
+                                          }
+                                          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                                        >
+                                          Yes, Confirm
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
 
                                 {canCancel && (
                                   <AlertDialog>
