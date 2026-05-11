@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore, type UserRole, type User, type Service, type Product, type Appointment } from '@/lib/store';
+import { useAppStore, type UserRole, type User, type Service, type Product, type Appointment, type HomePageContent } from '@/lib/store';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -63,6 +63,7 @@ import {
   AlertTriangle,
   Clock,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 
 // ==================== HELPERS ====================
@@ -119,6 +120,8 @@ export default function SuperAdminPanel() {
     cancelAppointment,
     homeButtonText,
     setHomeButtonText,
+    homePageContent,
+    setHomePageContent,
   } = useAppStore();
 
   // ---- Access Control ----
@@ -237,6 +240,8 @@ export default function SuperAdminPanel() {
           <SettingsTab
             homeButtonText={homeButtonText}
             setHomeButtonText={setHomeButtonText}
+            homePageContent={homePageContent}
+            setHomePageContent={setHomePageContent}
           />
         </TabsContent>
       </Tabs>
@@ -1279,33 +1284,43 @@ function AllAppointmentsTab({
 function SettingsTab({
   homeButtonText,
   setHomeButtonText,
+  homePageContent,
+  setHomePageContent,
 }: {
   homeButtonText: string;
   setHomeButtonText: (text: string) => void;
+  homePageContent: HomePageContent;
+  setHomePageContent: (content: Partial<HomePageContent>) => void;
 }) {
   const [homeTextEditing, setHomeTextEditing] = useState(homeButtonText);
+  const [editingHomePage, setEditingHomePage] = useState<HomePageContent>(homePageContent);
 
   // Sync local state when store value changes externally
   useEffect(() => {
     setHomeTextEditing(homeButtonText);
   }, [homeButtonText]);
 
+  useEffect(() => {
+    setEditingHomePage(homePageContent);
+  }, [homePageContent]);
+
   return (
     <>
+      {/* Navigation Button Text */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-rose-500" />
-            Site Settings
+            Navigation Settings
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="space-y-3">
             <Label htmlFor="sa-home-btn-text" className="text-sm font-medium">
               Home Navigation Button Text
             </Label>
             <p className="text-xs text-muted-foreground">
-              Change the text displayed on the &quot;Home&quot; navigation button. This affects both desktop and mobile navigation across the entire site.
+              Change the text displayed on the &quot;Home&quot; navigation button across the entire site.
             </p>
             <div className="flex gap-2">
               <Input
@@ -1334,6 +1349,232 @@ function SettingsTab({
               <span>Current value:</span>
               <Badge variant="secondary">{homeButtonText}</Badge>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Home Page Content */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-rose-500" />
+            Home Page Content
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Edit all the text content displayed on the Home page. Changes take effect immediately.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Hero Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Hero Section</h4>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-heroBadge" className="text-xs">Badge Text</Label>
+                <Input id="sa-heroBadge" value={editingHomePage.heroBadge} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroBadge: e.target.value })} placeholder="Premium Beauty Salon" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-heroTitle" className="text-xs">Main Title</Label>
+                <Input id="sa-heroTitle" value={editingHomePage.heroTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroTitle: e.target.value })} placeholder="La Bella" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-heroSubtitle" className="text-xs">Subtitle</Label>
+                <Input id="sa-heroSubtitle" value={editingHomePage.heroSubtitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroSubtitle: e.target.value })} placeholder="Where Beauty Meets Elegance" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-heroDescription" className="text-xs">Description</Label>
+                <Input id="sa-heroDescription" value={editingHomePage.heroDescription} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroDescription: e.target.value })} placeholder="Experience luxury beauty treatments tailored just for you" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="sa-heroButtonText1" className="text-xs">Primary Button</Label>
+                  <Input id="sa-heroButtonText1" value={editingHomePage.heroButtonText1} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroButtonText1: e.target.value })} placeholder="Book Appointment" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="sa-heroButtonText2" className="text-xs">Secondary Button</Label>
+                  <Input id="sa-heroButtonText2" value={editingHomePage.heroButtonText2} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroButtonText2: e.target.value })} placeholder="View Services" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Why Choose Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Why Choose Section</h4>
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="sa-whyChooseTitle" className="text-xs">Section Title</Label>
+                  <Input id="sa-whyChooseTitle" value={editingHomePage.whyChooseTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, whyChooseTitle: e.target.value })} placeholder="Why Choose" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="sa-whyChooseBrandName" className="text-xs">Brand Name (Highlighted)</Label>
+                  <Input id="sa-whyChooseBrandName" value={editingHomePage.whyChooseBrandName} onChange={(e) => setEditingHomePage({ ...editingHomePage, whyChooseBrandName: e.target.value })} placeholder="La Bella" />
+                </div>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-whyChooseSubtitle" className="text-xs">Section Subtitle</Label>
+                <Input id="sa-whyChooseSubtitle" value={editingHomePage.whyChooseSubtitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, whyChooseSubtitle: e.target.value })} placeholder="Discover the excellence that sets us apart" />
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Statistics</h4>
+            <div className="grid gap-3">
+              {/* Stat 1 */}
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Statistic 1</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-1">
+                    <Label htmlFor="sa-stat1Value" className="text-xs">Value</Label>
+                    <Input id="sa-stat1Value" value={editingHomePage.stat1Value} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat1Value: e.target.value })} placeholder="15+" />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label htmlFor="sa-stat1Label" className="text-xs">Label</Label>
+                    <Input id="sa-stat1Label" value={editingHomePage.stat1Label} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat1Label: e.target.value })} placeholder="Years of Experience" />
+                  </div>
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="sa-stat1Description" className="text-xs">Description</Label>
+                  <Input id="sa-stat1Description" value={editingHomePage.stat1Description} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat1Description: e.target.value })} placeholder="Over a decade of crafting beauty and building confidence" />
+                </div>
+              </div>
+              {/* Stat 2 */}
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Statistic 2</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-1">
+                    <Label htmlFor="sa-stat2Value" className="text-xs">Value</Label>
+                    <Input id="sa-stat2Value" value={editingHomePage.stat2Value} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat2Value: e.target.value })} placeholder="5000+" />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label htmlFor="sa-stat2Label" className="text-xs">Label</Label>
+                    <Input id="sa-stat2Label" value={editingHomePage.stat2Label} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat2Label: e.target.value })} placeholder="Happy Clients" />
+                  </div>
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="sa-stat2Description" className="text-xs">Description</Label>
+                  <Input id="sa-stat2Description" value={editingHomePage.stat2Description} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat2Description: e.target.value })} placeholder="Trusted by thousands who keep coming back for more" />
+                </div>
+              </div>
+              {/* Stat 3 */}
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Statistic 3</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-1">
+                    <Label htmlFor="sa-stat3Value" className="text-xs">Value</Label>
+                    <Input id="sa-stat3Value" value={editingHomePage.stat3Value} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat3Value: e.target.value })} placeholder="50+" />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label htmlFor="sa-stat3Label" className="text-xs">Label</Label>
+                    <Input id="sa-stat3Label" value={editingHomePage.stat3Label} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat3Label: e.target.value })} placeholder="Expert Staff" />
+                  </div>
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="sa-stat3Description" className="text-xs">Description</Label>
+                  <Input id="sa-stat3Description" value={editingHomePage.stat3Description} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat3Description: e.target.value })} placeholder="Skilled professionals passionate about your transformation" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Popular Services Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Popular Services Section</h4>
+            <div className="grid gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="sa-popularServicesTitle" className="text-xs">Title</Label>
+                  <Input id="sa-popularServicesTitle" value={editingHomePage.popularServicesTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, popularServicesTitle: e.target.value })} placeholder="Popular" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="sa-popularServicesHighlight" className="text-xs">Highlighted Word</Label>
+                  <Input id="sa-popularServicesHighlight" value={editingHomePage.popularServicesHighlight} onChange={(e) => setEditingHomePage({ ...editingHomePage, popularServicesHighlight: e.target.value })} placeholder="Services" />
+                </div>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-popularServicesSubtitle" className="text-xs">Subtitle</Label>
+                <Input id="sa-popularServicesSubtitle" value={editingHomePage.popularServicesSubtitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, popularServicesSubtitle: e.target.value })} placeholder="Explore our most loved beauty treatments" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-viewAllServicesButton" className="text-xs">View All Button Text</Label>
+                <Input id="sa-viewAllServicesButton" value={editingHomePage.viewAllServicesButton} onChange={(e) => setEditingHomePage({ ...editingHomePage, viewAllServicesButton: e.target.value })} placeholder="View All Services" />
+              </div>
+            </div>
+          </div>
+
+          {/* CTA Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Call-to-Action Section</h4>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-ctaTitle" className="text-xs">Title</Label>
+                <Input id="sa-ctaTitle" value={editingHomePage.ctaTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, ctaTitle: e.target.value })} placeholder="Ready to Transform Your Look?" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-ctaDescription" className="text-xs">Description</Label>
+                <Input id="sa-ctaDescription" value={editingHomePage.ctaDescription} onChange={(e) => setEditingHomePage({ ...editingHomePage, ctaDescription: e.target.value })} placeholder="Let our expert team create the perfect look for you..." />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="sa-ctaButtonText" className="text-xs">Button Text</Label>
+                <Input id="sa-ctaButtonText" value={editingHomePage.ctaButtonText} onChange={(e) => setEditingHomePage({ ...editingHomePage, ctaButtonText: e.target.value })} placeholder="Book Your Appointment Today" />
+              </div>
+            </div>
+          </div>
+
+          {/* Save & Reset Buttons */}
+          <div className="flex items-center justify-between pt-2 border-t gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full text-xs gap-1.5"
+              onClick={() => {
+                const defaults = {
+                  heroBadge: "Premium Beauty Salon",
+                  heroTitle: "La Bella",
+                  heroSubtitle: "Where Beauty Meets Elegance",
+                  heroDescription: "Experience luxury beauty treatments tailored just for you",
+                  heroButtonText1: "Book Appointment",
+                  heroButtonText2: "View Services",
+                  whyChooseTitle: "Why Choose",
+                  whyChooseBrandName: "La Bella",
+                  whyChooseSubtitle: "Discover the excellence that sets us apart",
+                  stat1Value: "15+",
+                  stat1Label: "Years of Experience",
+                  stat1Description: "Over a decade of crafting beauty and building confidence",
+                  stat2Value: "5000+",
+                  stat2Label: "Happy Clients",
+                  stat2Description: "Trusted by thousands who keep coming back for more",
+                  stat3Value: "50+",
+                  stat3Label: "Expert Staff",
+                  stat3Description: "Skilled professionals passionate about your transformation",
+                  popularServicesTitle: "Popular",
+                  popularServicesHighlight: "Services",
+                  popularServicesSubtitle: "Explore our most loved beauty treatments",
+                  viewAllServicesButton: "View All Services",
+                  ctaTitle: "Ready to Transform Your Look?",
+                  ctaDescription: "Let our expert team create the perfect look for you. Book your appointment today and step into a world of beauty.",
+                  ctaButtonText: "Book Your Appointment Today",
+                };
+                setEditingHomePage(defaults);
+                setHomePageContent(defaults);
+                toast.success('Home page content reset to defaults');
+              }}
+            >
+              Reset to Defaults
+            </Button>
+            <Button
+              onClick={() => {
+                setHomePageContent(editingHomePage);
+                toast.success('Home page content updated — navigate to Home to see changes');
+              }}
+              className="gap-2 rounded-full"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Save All Changes
+            </Button>
           </div>
         </CardContent>
       </Card>

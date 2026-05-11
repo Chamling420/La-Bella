@@ -70,7 +70,7 @@ const staggerItem = {
 };
 
 export default function HomePage() {
-  const { services, setCurrentPage } = useAppStore();
+  const { services, setCurrentPage, homePageContent: c } = useAppStore();
   const popularServices = services.slice(0, 3);
 
   return (
@@ -132,7 +132,7 @@ export default function HomePage() {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
               <Sparkles className="w-4 h-4" />
-              Premium Beauty Salon
+              {c.heroBadge}
             </span>
           </motion.div>
 
@@ -144,7 +144,7 @@ export default function HomePage() {
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-4 sm:mb-6"
           >
             <span className="bg-gradient-to-r from-primary via-rose-500 to-primary bg-clip-text text-transparent">
-              La Bella
+              {c.heroTitle}
             </span>
           </motion.h1>
 
@@ -155,7 +155,7 @@ export default function HomePage() {
             custom={1}
             className="text-xl sm:text-2xl md:text-3xl font-light text-foreground/80 mb-3 sm:mb-4"
           >
-            Where Beauty Meets Elegance
+            {c.heroSubtitle}
           </motion.p>
 
           <motion.p
@@ -165,7 +165,7 @@ export default function HomePage() {
             custom={2}
             className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10"
           >
-            Experience luxury beauty treatments tailored just for you
+            {c.heroDescription}
           </motion.p>
 
           <motion.div
@@ -180,7 +180,7 @@ export default function HomePage() {
               className="w-full sm:w-auto text-base px-8 py-6 rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
               onClick={() => setCurrentPage("services")}
             >
-              Book Appointment
+              {c.heroButtonText1}
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
             <Button
@@ -189,7 +189,7 @@ export default function HomePage() {
               className="w-full sm:w-auto text-base px-8 py-6 rounded-full border-primary/30 hover:bg-primary/5 transition-all duration-300"
               onClick={() => setCurrentPage("services")}
             >
-              View Services
+              {c.heroButtonText2}
             </Button>
           </motion.div>
         </div>
@@ -209,14 +209,14 @@ export default function HomePage() {
               variants={staggerItem}
               className="text-3xl sm:text-4xl font-bold mb-4"
             >
-              Why Choose{" "}
-              <span className="text-primary">La Bella</span>
+              {c.whyChooseTitle}{" "}
+              <span className="text-primary">{c.whyChooseBrandName}</span>
             </motion.h2>
             <motion.p
               variants={staggerItem}
               className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto"
             >
-              Discover the excellence that sets us apart
+              {c.whyChooseSubtitle}
             </motion.p>
           </motion.div>
 
@@ -235,13 +235,13 @@ export default function HomePage() {
                     <Award className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                   </div>
                   <CardTitle className="text-3xl sm:text-4xl font-bold text-primary">
-                    15+
+                    {c.stat1Value}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg font-semibold mb-1">Years of Experience</p>
+                  <p className="text-lg font-semibold mb-1">{c.stat1Label}</p>
                   <p className="text-sm text-muted-foreground">
-                    Over a decade of crafting beauty and building confidence
+                    {c.stat1Description}
                   </p>
                 </CardContent>
               </Card>
@@ -255,13 +255,13 @@ export default function HomePage() {
                     <Users className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                   </div>
                   <CardTitle className="text-3xl sm:text-4xl font-bold text-primary">
-                    5000+
+                    {c.stat2Value}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg font-semibold mb-1">Happy Clients</p>
+                  <p className="text-lg font-semibold mb-1">{c.stat2Label}</p>
                   <p className="text-sm text-muted-foreground">
-                    Trusted by thousands who keep coming back for more
+                    {c.stat2Description}
                   </p>
                 </CardContent>
               </Card>
@@ -275,13 +275,13 @@ export default function HomePage() {
                     <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                   </div>
                   <CardTitle className="text-3xl sm:text-4xl font-bold text-primary">
-                    50+
+                    {c.stat3Value}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg font-semibold mb-1">Expert Staff</p>
+                  <p className="text-lg font-semibold mb-1">{c.stat3Label}</p>
                   <p className="text-sm text-muted-foreground">
-                    Skilled professionals passionate about your transformation
+                    {c.stat3Description}
                   </p>
                 </CardContent>
               </Card>
@@ -304,13 +304,13 @@ export default function HomePage() {
               variants={staggerItem}
               className="text-3xl sm:text-4xl font-bold mb-4"
             >
-              Popular <span className="text-primary">Services</span>
+              {c.popularServicesTitle} <span className="text-primary">{c.popularServicesHighlight}</span>
             </motion.h2>
             <motion.p
               variants={staggerItem}
               className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto"
             >
-              Explore our most loved beauty treatments
+              {c.popularServicesSubtitle}
             </motion.p>
           </motion.div>
 
@@ -365,7 +365,7 @@ export default function HomePage() {
               className="rounded-full px-8 py-6 border-primary/30 hover:bg-primary/5 transition-all duration-300"
               onClick={() => setCurrentPage("services")}
             >
-              View All Services
+              {c.viewAllServicesButton}
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </motion.div>
@@ -412,13 +412,13 @@ export default function HomePage() {
               variants={staggerItem}
               className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6"
             >
-              Ready to Transform Your Look?
+              {c.ctaTitle}
             </motion.h2>
             <motion.p
               variants={staggerItem}
               className="text-lg sm:text-xl text-white/80 mb-8 sm:mb-10 max-w-xl mx-auto"
             >
-              Let our expert team create the perfect look for you. Book your appointment today and step into a world of beauty.
+              {c.ctaDescription}
             </motion.p>
             <motion.div variants={staggerItem}>
               <Button
@@ -426,7 +426,7 @@ export default function HomePage() {
                 className="bg-white text-primary hover:bg-white/90 rounded-full px-10 py-7 text-base sm:text-lg font-semibold shadow-xl shadow-black/10 transition-all duration-300 hover:scale-105"
                 onClick={() => setCurrentPage("services")}
               >
-                Book Your Appointment Today
+                {c.ctaButtonText}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </motion.div>

@@ -74,6 +74,76 @@ export type Page =
   | "login"
   | "register";
 
+// ==================== HOME PAGE CONTENT ====================
+export interface HomePageContent {
+  // Hero Section
+  heroBadge: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroDescription: string;
+  heroButtonText1: string;
+  heroButtonText2: string;
+
+  // Why Choose Section
+  whyChooseTitle: string;
+  whyChooseBrandName: string;
+  whyChooseSubtitle: string;
+
+  // Statistics
+  stat1Value: string;
+  stat1Label: string;
+  stat1Description: string;
+  stat2Value: string;
+  stat2Label: string;
+  stat2Description: string;
+  stat3Value: string;
+  stat3Label: string;
+  stat3Description: string;
+
+  // Popular Services Section
+  popularServicesTitle: string;
+  popularServicesHighlight: string;
+  popularServicesSubtitle: string;
+  viewAllServicesButton: string;
+
+  // CTA Section
+  ctaTitle: string;
+  ctaDescription: string;
+  ctaButtonText: string;
+}
+
+const DEFAULT_HOME_PAGE_CONTENT: HomePageContent = {
+  heroBadge: "Premium Beauty Salon",
+  heroTitle: "La Bella",
+  heroSubtitle: "Where Beauty Meets Elegance",
+  heroDescription: "Experience luxury beauty treatments tailored just for you",
+  heroButtonText1: "Book Appointment",
+  heroButtonText2: "View Services",
+
+  whyChooseTitle: "Why Choose",
+  whyChooseBrandName: "La Bella",
+  whyChooseSubtitle: "Discover the excellence that sets us apart",
+
+  stat1Value: "15+",
+  stat1Label: "Years of Experience",
+  stat1Description: "Over a decade of crafting beauty and building confidence",
+  stat2Value: "5000+",
+  stat2Label: "Happy Clients",
+  stat2Description: "Trusted by thousands who keep coming back for more",
+  stat3Value: "50+",
+  stat3Label: "Expert Staff",
+  stat3Description: "Skilled professionals passionate about your transformation",
+
+  popularServicesTitle: "Popular",
+  popularServicesHighlight: "Services",
+  popularServicesSubtitle: "Explore our most loved beauty treatments",
+  viewAllServicesButton: "View All Services",
+
+  ctaTitle: "Ready to Transform Your Look?",
+  ctaDescription: "Let our expert team create the perfect look for you. Book your appointment today and step into a world of beauty.",
+  ctaButtonText: "Book Your Appointment Today",
+};
+
 // ==================== DEFAULT DATA ====================
 const DEFAULT_USERS: User[] = [
   {
@@ -192,6 +262,10 @@ interface AppState {
   homeButtonText: string;
   setHomeButtonText: (text: string) => void;
 
+  // Home Page Content
+  homePageContent: HomePageContent;
+  setHomePageContent: (content: Partial<HomePageContent>) => void;
+
   // Gallery
   gallery: GalleryImage[];
   addGalleryImage: (url: string) => void;
@@ -241,6 +315,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const gallery = loadFromStorage<GalleryImage[]>("labella_gallery", DEFAULT_GALLERY);
     const reviews = loadFromStorage<Review[]>("labella_reviews", DEFAULT_REVIEWS);
     const homeButtonText = loadFromStorage<string>("labella_home_button_text", "Home");
+    const homePageContent = loadFromStorage<HomePageContent>("labella_home_page_content", DEFAULT_HOME_PAGE_CONTENT);
 
     let currentUser: User | null = null;
     const storedUserId = localStorage.getItem("labella_current_user_id");
@@ -258,6 +333,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       gallery,
       reviews,
       homeButtonText,
+      homePageContent,
       currentUser,
     });
   },
@@ -453,6 +529,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   setHomeButtonText: (text) => {
     set({ homeButtonText: text });
     saveToStorage("labella_home_button_text", text);
+  },
+
+  // Home Page Content - defaults
+  homePageContent: DEFAULT_HOME_PAGE_CONTENT,
+  setHomePageContent: (content) => {
+    const updated = { ...get().homePageContent, ...content };
+    set({ homePageContent: updated });
+    saveToStorage("labella_home_page_content", updated);
   },
 
   // Gallery - defaults
