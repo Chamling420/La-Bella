@@ -179,7 +179,7 @@ export default function ProductsPage() {
 
                   <CardContent className="px-4 pb-2">
                     <span className="text-2xl font-bold text-primary">
-                      ${product.price.toFixed(2)}
+                      NPR {product.price.toFixed(2)}
                     </span>
                   </CardContent>
 

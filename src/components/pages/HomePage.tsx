@@ -337,7 +337,7 @@ export default function HomePage() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold text-primary">
-                          ${service.price}
+                          NPR {service.price}
                         </span>
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Clock className="w-3.5 h-3.5" />

@@ -535,7 +535,7 @@ function ManageServicesTab({
                       <TableCell className="font-medium">
                         {service.name}
                       </TableCell>
-                      <TableCell>${service.price.toFixed(2)}</TableCell>
+                      <TableCell>NPR {service.price.toFixed(2)}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {service.duration}
                       </TableCell>
@@ -590,7 +590,7 @@ function ManageServicesTab({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="svc-price">Price ($)</Label>
+              <Label htmlFor="svc-price">Price (NPR)</Label>
               <Input
                 id="svc-price"
                 type="number"
@@ -816,7 +816,7 @@ function ManageProductsTab({
                       <TableCell>
                         <Badge variant="outline">{product.category}</Badge>
                       </TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>NPR {product.price.toFixed(2)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
@@ -868,7 +868,7 @@ function ManageProductsTab({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="prod-price">Price ($)</Label>
+              <Label htmlFor="prod-price">Price (NPR)</Label>
               <Input
                 id="prod-price"
                 type="number"

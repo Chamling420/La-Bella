@@ -187,7 +187,7 @@ export default function ServicesPage() {
                     <CardContent className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-3xl font-bold text-primary">
-                          ${service.price}
+                          NPR {service.price}
                         </span>
                         <span className="flex items-center gap-1.5 text-sm text-muted-foreground bg-secondary/60 px-3 py-1.5 rounded-full">
                           <Clock className="w-3.5 h-3.5" />

@@ -430,7 +430,7 @@ export default function AdminPanel() {
                                 </div>
                               </TableCell>
                               <TableCell className="font-medium">{service.name}</TableCell>
-                              <TableCell>${service.price}</TableCell>
+                              <TableCell>NPR {service.price}</TableCell>
                               <TableCell>{service.duration}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-2">
@@ -506,7 +506,7 @@ export default function AdminPanel() {
                               <h3 className="font-semibold text-sm">{service.name}</h3>
                               <div className="flex items-center gap-2 mt-1">
                                 <Badge variant="secondary" className="text-xs">
-                                  ${service.price}
+                                  NPR {service.price}
                                 </Badge>
                                 <span className="text-xs text-muted-foreground">{service.duration}</span>
                               </div>
@@ -613,7 +613,7 @@ export default function AdminPanel() {
                               </div>
                             </TableCell>
                             <TableCell className="font-medium">{product.name}</TableCell>
-                            <TableCell>${product.price}</TableCell>
+                            <TableCell>NPR {product.price}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className={getCategoryBadge(product.category)}>
                                 {product.category}
@@ -694,7 +694,7 @@ export default function AdminPanel() {
                             <h3 className="font-semibold text-sm">{product.name}</h3>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="secondary" className="text-xs">
-                                ${product.price}
+                                NPR {product.price}
                               </Badge>
                               <Badge variant="outline" className={`text-xs ${getCategoryBadge(product.category)}`}>
                                 {product.category}
@@ -1108,7 +1108,7 @@ export default function AdminPanel() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="service-price">Price ($)</Label>
+                  <Label htmlFor="service-price">Price (NPR)</Label>
                   <Input
                     id="service-price"
                     type="number"
@@ -1217,7 +1217,7 @@ export default function AdminPanel() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="product-price">Price ($)</Label>
+                  <Label htmlFor="product-price">Price (NPR)</Label>
                   <Input
                     id="product-price"
                     type="number"

@@ -158,7 +158,7 @@ export default function CartPage() {
                             {item.product.name}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            ${item.product.price.toFixed(2)} each
+                            NPR {item.product.price.toFixed(2)} each
                           </p>
                           {item.product.category && (
                             <Badge
@@ -208,7 +208,7 @@ export default function CartPage() {
                         {/* Line Total */}
                         <div className="hidden sm:block text-right flex-shrink-0 w-24">
                           <p className="font-bold text-primary">
-                            ${item.lineTotal.toFixed(2)}
+                            NPR {item.lineTotal.toFixed(2)}
                           </p>
                         </div>
 
@@ -228,7 +228,7 @@ export default function CartPage() {
                       <div className="sm:hidden px-4 pb-3 flex justify-end">
                         <span className="text-sm text-muted-foreground mr-2">Subtotal:</span>
                         <span className="font-bold text-primary">
-                          ${item.lineTotal.toFixed(2)}
+                          NPR {item.lineTotal.toFixed(2)}
                         </span>
                       </div>
 
@@ -289,7 +289,7 @@ export default function CartPage() {
                     )
                   </span>
                   <span className="font-medium">
-                    ${subtotal.toFixed(2)}
+                    NPR {subtotal.toFixed(2)}
                   </span>
                 </div>
 
@@ -298,7 +298,7 @@ export default function CartPage() {
                   <span className="text-muted-foreground text-sm">
                     Tax ({(TAX_RATE * 100).toFixed(0)}%)
                   </span>
-                  <span className="font-medium">${tax.toFixed(2)}</span>
+                  <span className="font-medium">NPR {tax.toFixed(2)}</span>
                 </div>
 
                 {/* Shipping note */}
@@ -320,7 +320,7 @@ export default function CartPage() {
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-lg">Total</span>
                   <span className="font-bold text-2xl text-primary">
-                    ${grandTotal.toFixed(2)}
+                    NPR {grandTotal.toFixed(2)}
                   </span>
                 </div>
               </CardContent>
