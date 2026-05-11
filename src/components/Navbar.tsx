@@ -46,7 +46,12 @@ const NAV_ITEMS: { label: string; page: Page; icon: React.ReactNode; roles?: str
 ];
 
 export function Navbar() {
-  const { currentPage, setCurrentPage, currentUser, logout, cart, homeButtonText } = useAppStore();
+  const currentPage = useAppStore((s) => s.currentPage);
+  const setCurrentPage = useAppStore((s) => s.setCurrentPage);
+  const currentUser = useAppStore((s) => s.currentUser);
+  const logout = useAppStore((s) => s.logout);
+  const cart = useAppStore((s) => s.cart);
+  const homeButtonText = useAppStore((s) => s.homeButtonText);
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 

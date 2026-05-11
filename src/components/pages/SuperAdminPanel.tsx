@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore, type UserRole, type User, type Service, type Product, type Appointment, type HomePageContent } from '@/lib/store';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1192,10 +1192,7 @@ function AllAppointmentsTab({
       <AlertDialog
         open={!!confirmId}
         onOpenChange={(open) => {
-          if (!open) {
-            setConfirmId(null);
-            setActionInfo({ serviceName: '', date: '', userName: '' });
-          }
+          if (!open) setConfirmId(null);
         }}
       >
         <AlertDialogContent>
@@ -1205,23 +1202,16 @@ function AllAppointmentsTab({
               Confirm Appointment
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to confirm the appointment for{' '}
-              <strong className="text-foreground">
-                {actionInfo.serviceName}
-              </strong>{' '}
-              for{' '}
-              <strong className="text-foreground">
-                {actionInfo.userName}
-              </strong>{' '}
+              Are you sure you want to confirm the{' '}
+              <strong className="text-foreground">{actionInfo.serviceName}</strong>{' '}
+              appointment for{' '}
+              <strong className="text-foreground">{actionInfo.userName}</strong>{' '}
               on{' '}
-              <strong className="text-foreground">
-                {actionInfo.date ? formatDate(actionInfo.date) : ''}
-              </strong>
-              ?
+              <strong className="text-foreground">{formatDate(actionInfo.date)}</strong>?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Don&apos;t Confirm</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmConfirm}
               className="bg-emerald-600 text-white hover:bg-emerald-700"
@@ -1236,36 +1226,27 @@ function AllAppointmentsTab({
       <AlertDialog
         open={!!cancelId}
         onOpenChange={(open) => {
-          if (!open) {
-            setCancelId(null);
-            setActionInfo({ serviceName: '', date: '', userName: '' });
-          }
+          if (!open) setCancelId(null);
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
+              <XCircle className="h-5 w-5" />
               Cancel Appointment
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel the appointment for{' '}
-              <strong className="text-foreground">
-                {actionInfo.serviceName}
-              </strong>{' '}
-              for{' '}
-              <strong className="text-foreground">
-                {actionInfo.userName}
-              </strong>{' '}
+              Are you sure you want to cancel the{' '}
+              <strong className="text-foreground">{actionInfo.serviceName}</strong>{' '}
+              appointment for{' '}
+              <strong className="text-foreground">{actionInfo.userName}</strong>{' '}
               on{' '}
-              <strong className="text-foreground">
-                {actionInfo.date ? formatDate(actionInfo.date) : ''}
-              </strong>
-              ? This action cannot be undone.
+              <strong className="text-foreground">{formatDate(actionInfo.date)}</strong>?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep Appointment</AlertDialogCancel>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -1292,18 +1273,6 @@ function SettingsTab({
   homePageContent: HomePageContent;
   setHomePageContent: (content: Partial<HomePageContent>) => void;
 }) {
-  const [homeTextEditing, setHomeTextEditing] = useState(homeButtonText);
-  const [editingHomePage, setEditingHomePage] = useState<HomePageContent>(homePageContent);
-
-  // Sync local state when store value changes externally
-  useEffect(() => {
-    setHomeTextEditing(homeButtonText);
-  }, [homeButtonText]);
-
-  useEffect(() => {
-    setEditingHomePage(homePageContent);
-  }, [homePageContent]);
-
   return (
     <>
       {/* Navigation Button Text */}
@@ -1322,33 +1291,15 @@ function SettingsTab({
             <p className="text-xs text-muted-foreground">
               Change the text displayed on the &quot;Home&quot; navigation button across the entire site.
             </p>
-            <div className="flex gap-2">
-              <Input
-                id="sa-home-btn-text"
-                value={homeTextEditing}
-                onChange={(e) => setHomeTextEditing(e.target.value)}
-                placeholder="Home"
-                className="flex-1"
-              />
-              <Button
-                onClick={() => {
-                  if (!homeTextEditing.trim()) {
-                    toast.error('Button text cannot be empty');
-                    return;
-                  }
-                  setHomeButtonText(homeTextEditing.trim());
-                  toast.success('Home button text updated');
-                }}
-                className="gap-2 rounded-full"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Save
-              </Button>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Current value:</span>
-              <Badge variant="secondary">{homeButtonText}</Badge>
-            </div>
+            <Input
+              id="sa-home-btn-text"
+              value={homeButtonText}
+              onChange={(e) => setHomeButtonText(e.target.value)}
+              placeholder="Home"
+            />
+            <p className="text-xs text-muted-foreground">
+              Changes are saved automatically and update the navbar in real-time.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -1371,28 +1322,28 @@ function SettingsTab({
             <div className="grid gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-heroBadge" className="text-xs">Badge Text</Label>
-                <Input id="sa-heroBadge" value={editingHomePage.heroBadge} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroBadge: e.target.value })} placeholder="Premium Beauty Salon" />
+                <Input id="sa-heroBadge" value={homePageContent.heroBadge} onChange={(e) => setHomePageContent({ heroBadge: e.target.value })} placeholder="Premium Beauty Salon" />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-heroTitle" className="text-xs">Main Title</Label>
-                <Input id="sa-heroTitle" value={editingHomePage.heroTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroTitle: e.target.value })} placeholder="La Bella" />
+                <Input id="sa-heroTitle" value={homePageContent.heroTitle} onChange={(e) => setHomePageContent({ heroTitle: e.target.value })} placeholder="La Bella" />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-heroSubtitle" className="text-xs">Subtitle</Label>
-                <Input id="sa-heroSubtitle" value={editingHomePage.heroSubtitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroSubtitle: e.target.value })} placeholder="Where Beauty Meets Elegance" />
+                <Input id="sa-heroSubtitle" value={homePageContent.heroSubtitle} onChange={(e) => setHomePageContent({ heroSubtitle: e.target.value })} placeholder="Where Beauty Meets Elegance" />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-heroDescription" className="text-xs">Description</Label>
-                <Input id="sa-heroDescription" value={editingHomePage.heroDescription} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroDescription: e.target.value })} placeholder="Experience luxury beauty treatments tailored just for you" />
+                <Input id="sa-heroDescription" value={homePageContent.heroDescription} onChange={(e) => setHomePageContent({ heroDescription: e.target.value })} placeholder="Experience luxury beauty treatments tailored just for you" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <Label htmlFor="sa-heroButtonText1" className="text-xs">Primary Button</Label>
-                  <Input id="sa-heroButtonText1" value={editingHomePage.heroButtonText1} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroButtonText1: e.target.value })} placeholder="Book Appointment" />
+                  <Input id="sa-heroButtonText1" value={homePageContent.heroButtonText1} onChange={(e) => setHomePageContent({ heroButtonText1: e.target.value })} placeholder="Book Appointment" />
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="sa-heroButtonText2" className="text-xs">Secondary Button</Label>
-                  <Input id="sa-heroButtonText2" value={editingHomePage.heroButtonText2} onChange={(e) => setEditingHomePage({ ...editingHomePage, heroButtonText2: e.target.value })} placeholder="View Services" />
+                  <Input id="sa-heroButtonText2" value={homePageContent.heroButtonText2} onChange={(e) => setHomePageContent({ heroButtonText2: e.target.value })} placeholder="View Services" />
                 </div>
               </div>
             </div>
@@ -1405,16 +1356,16 @@ function SettingsTab({
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <Label htmlFor="sa-whyChooseTitle" className="text-xs">Section Title</Label>
-                  <Input id="sa-whyChooseTitle" value={editingHomePage.whyChooseTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, whyChooseTitle: e.target.value })} placeholder="Why Choose" />
+                  <Input id="sa-whyChooseTitle" value={homePageContent.whyChooseTitle} onChange={(e) => setHomePageContent({ whyChooseTitle: e.target.value })} placeholder="Why Choose" />
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="sa-whyChooseBrandName" className="text-xs">Brand Name (Highlighted)</Label>
-                  <Input id="sa-whyChooseBrandName" value={editingHomePage.whyChooseBrandName} onChange={(e) => setEditingHomePage({ ...editingHomePage, whyChooseBrandName: e.target.value })} placeholder="La Bella" />
+                  <Input id="sa-whyChooseBrandName" value={homePageContent.whyChooseBrandName} onChange={(e) => setHomePageContent({ whyChooseBrandName: e.target.value })} placeholder="La Bella" />
                 </div>
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-whyChooseSubtitle" className="text-xs">Section Subtitle</Label>
-                <Input id="sa-whyChooseSubtitle" value={editingHomePage.whyChooseSubtitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, whyChooseSubtitle: e.target.value })} placeholder="Discover the excellence that sets us apart" />
+                <Input id="sa-whyChooseSubtitle" value={homePageContent.whyChooseSubtitle} onChange={(e) => setHomePageContent({ whyChooseSubtitle: e.target.value })} placeholder="Discover the excellence that sets us apart" />
               </div>
             </div>
           </div>
@@ -1429,16 +1380,16 @@ function SettingsTab({
                 <div className="grid grid-cols-2 gap-2">
                   <div className="grid gap-1">
                     <Label htmlFor="sa-stat1Value" className="text-xs">Value</Label>
-                    <Input id="sa-stat1Value" value={editingHomePage.stat1Value} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat1Value: e.target.value })} placeholder="15+" />
+                    <Input id="sa-stat1Value" value={homePageContent.stat1Value} onChange={(e) => setHomePageContent({ stat1Value: e.target.value })} placeholder="15+" />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="sa-stat1Label" className="text-xs">Label</Label>
-                    <Input id="sa-stat1Label" value={editingHomePage.stat1Label} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat1Label: e.target.value })} placeholder="Years of Experience" />
+                    <Input id="sa-stat1Label" value={homePageContent.stat1Label} onChange={(e) => setHomePageContent({ stat1Label: e.target.value })} placeholder="Years of Experience" />
                   </div>
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="sa-stat1Description" className="text-xs">Description</Label>
-                  <Input id="sa-stat1Description" value={editingHomePage.stat1Description} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat1Description: e.target.value })} placeholder="Over a decade of crafting beauty and building confidence" />
+                  <Input id="sa-stat1Description" value={homePageContent.stat1Description} onChange={(e) => setHomePageContent({ stat1Description: e.target.value })} placeholder="Over a decade of crafting beauty and building confidence" />
                 </div>
               </div>
               {/* Stat 2 */}
@@ -1447,16 +1398,16 @@ function SettingsTab({
                 <div className="grid grid-cols-2 gap-2">
                   <div className="grid gap-1">
                     <Label htmlFor="sa-stat2Value" className="text-xs">Value</Label>
-                    <Input id="sa-stat2Value" value={editingHomePage.stat2Value} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat2Value: e.target.value })} placeholder="5000+" />
+                    <Input id="sa-stat2Value" value={homePageContent.stat2Value} onChange={(e) => setHomePageContent({ stat2Value: e.target.value })} placeholder="5000+" />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="sa-stat2Label" className="text-xs">Label</Label>
-                    <Input id="sa-stat2Label" value={editingHomePage.stat2Label} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat2Label: e.target.value })} placeholder="Happy Clients" />
+                    <Input id="sa-stat2Label" value={homePageContent.stat2Label} onChange={(e) => setHomePageContent({ stat2Label: e.target.value })} placeholder="Happy Clients" />
                   </div>
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="sa-stat2Description" className="text-xs">Description</Label>
-                  <Input id="sa-stat2Description" value={editingHomePage.stat2Description} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat2Description: e.target.value })} placeholder="Trusted by thousands who keep coming back for more" />
+                  <Input id="sa-stat2Description" value={homePageContent.stat2Description} onChange={(e) => setHomePageContent({ stat2Description: e.target.value })} placeholder="Trusted by thousands who keep coming back for more" />
                 </div>
               </div>
               {/* Stat 3 */}
@@ -1465,16 +1416,16 @@ function SettingsTab({
                 <div className="grid grid-cols-2 gap-2">
                   <div className="grid gap-1">
                     <Label htmlFor="sa-stat3Value" className="text-xs">Value</Label>
-                    <Input id="sa-stat3Value" value={editingHomePage.stat3Value} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat3Value: e.target.value })} placeholder="50+" />
+                    <Input id="sa-stat3Value" value={homePageContent.stat3Value} onChange={(e) => setHomePageContent({ stat3Value: e.target.value })} placeholder="50+" />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="sa-stat3Label" className="text-xs">Label</Label>
-                    <Input id="sa-stat3Label" value={editingHomePage.stat3Label} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat3Label: e.target.value })} placeholder="Expert Staff" />
+                    <Input id="sa-stat3Label" value={homePageContent.stat3Label} onChange={(e) => setHomePageContent({ stat3Label: e.target.value })} placeholder="Expert Staff" />
                   </div>
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="sa-stat3Description" className="text-xs">Description</Label>
-                  <Input id="sa-stat3Description" value={editingHomePage.stat3Description} onChange={(e) => setEditingHomePage({ ...editingHomePage, stat3Description: e.target.value })} placeholder="Skilled professionals passionate about your transformation" />
+                  <Input id="sa-stat3Description" value={homePageContent.stat3Description} onChange={(e) => setHomePageContent({ stat3Description: e.target.value })} placeholder="Skilled professionals passionate about your transformation" />
                 </div>
               </div>
             </div>
@@ -1487,20 +1438,20 @@ function SettingsTab({
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <Label htmlFor="sa-popularServicesTitle" className="text-xs">Title</Label>
-                  <Input id="sa-popularServicesTitle" value={editingHomePage.popularServicesTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, popularServicesTitle: e.target.value })} placeholder="Popular" />
+                  <Input id="sa-popularServicesTitle" value={homePageContent.popularServicesTitle} onChange={(e) => setHomePageContent({ popularServicesTitle: e.target.value })} placeholder="Popular" />
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="sa-popularServicesHighlight" className="text-xs">Highlighted Word</Label>
-                  <Input id="sa-popularServicesHighlight" value={editingHomePage.popularServicesHighlight} onChange={(e) => setEditingHomePage({ ...editingHomePage, popularServicesHighlight: e.target.value })} placeholder="Services" />
+                  <Input id="sa-popularServicesHighlight" value={homePageContent.popularServicesHighlight} onChange={(e) => setHomePageContent({ popularServicesHighlight: e.target.value })} placeholder="Services" />
                 </div>
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-popularServicesSubtitle" className="text-xs">Subtitle</Label>
-                <Input id="sa-popularServicesSubtitle" value={editingHomePage.popularServicesSubtitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, popularServicesSubtitle: e.target.value })} placeholder="Explore our most loved beauty treatments" />
+                <Input id="sa-popularServicesSubtitle" value={homePageContent.popularServicesSubtitle} onChange={(e) => setHomePageContent({ popularServicesSubtitle: e.target.value })} placeholder="Explore our most loved beauty treatments" />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-viewAllServicesButton" className="text-xs">View All Button Text</Label>
-                <Input id="sa-viewAllServicesButton" value={editingHomePage.viewAllServicesButton} onChange={(e) => setEditingHomePage({ ...editingHomePage, viewAllServicesButton: e.target.value })} placeholder="View All Services" />
+                <Input id="sa-viewAllServicesButton" value={homePageContent.viewAllServicesButton} onChange={(e) => setHomePageContent({ viewAllServicesButton: e.target.value })} placeholder="View All Services" />
               </div>
             </div>
           </div>
@@ -1511,21 +1462,21 @@ function SettingsTab({
             <div className="grid gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-ctaTitle" className="text-xs">Title</Label>
-                <Input id="sa-ctaTitle" value={editingHomePage.ctaTitle} onChange={(e) => setEditingHomePage({ ...editingHomePage, ctaTitle: e.target.value })} placeholder="Ready to Transform Your Look?" />
+                <Input id="sa-ctaTitle" value={homePageContent.ctaTitle} onChange={(e) => setHomePageContent({ ctaTitle: e.target.value })} placeholder="Ready to Transform Your Look?" />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-ctaDescription" className="text-xs">Description</Label>
-                <Input id="sa-ctaDescription" value={editingHomePage.ctaDescription} onChange={(e) => setEditingHomePage({ ...editingHomePage, ctaDescription: e.target.value })} placeholder="Let our expert team create the perfect look for you..." />
+                <Input id="sa-ctaDescription" value={homePageContent.ctaDescription} onChange={(e) => setHomePageContent({ ctaDescription: e.target.value })} placeholder="Let our expert team create the perfect look for you..." />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="sa-ctaButtonText" className="text-xs">Button Text</Label>
-                <Input id="sa-ctaButtonText" value={editingHomePage.ctaButtonText} onChange={(e) => setEditingHomePage({ ...editingHomePage, ctaButtonText: e.target.value })} placeholder="Book Your Appointment Today" />
+                <Input id="sa-ctaButtonText" value={homePageContent.ctaButtonText} onChange={(e) => setHomePageContent({ ctaButtonText: e.target.value })} placeholder="Book Your Appointment Today" />
               </div>
             </div>
           </div>
 
-          {/* Save & Reset Buttons */}
-          <div className="flex items-center justify-between pt-2 border-t gap-3">
+          {/* Reset Button */}
+          <div className="flex items-center justify-end pt-2 border-t gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -1558,22 +1509,11 @@ function SettingsTab({
                   ctaDescription: "Let our expert team create the perfect look for you. Book your appointment today and step into a world of beauty.",
                   ctaButtonText: "Book Your Appointment Today",
                 };
-                setEditingHomePage(defaults);
                 setHomePageContent(defaults);
                 toast.success('Home page content reset to defaults');
               }}
             >
               Reset to Defaults
-            </Button>
-            <Button
-              onClick={() => {
-                setHomePageContent(editingHomePage);
-                toast.success('Home page content updated — navigate to Home to see changes');
-              }}
-              className="gap-2 rounded-full"
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Save All Changes
             </Button>
           </div>
         </CardContent>

@@ -70,7 +70,9 @@ const staggerItem = {
 };
 
 export default function HomePage() {
-  const { services, setCurrentPage, homePageContent: c } = useAppStore();
+  const services = useAppStore((s) => s.services);
+  const setCurrentPage = useAppStore((s) => s.setCurrentPage);
+  const homePageContent = useAppStore((s) => s.homePageContent);
   const popularServices = services.slice(0, 3);
 
   return (
@@ -132,7 +134,7 @@ export default function HomePage() {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
               <Sparkles className="w-4 h-4" />
-              {c.heroBadge}
+              {homePageContent.heroBadge}
             </span>
           </motion.div>
 
@@ -144,7 +146,7 @@ export default function HomePage() {
             className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-4 sm:mb-6"
           >
             <span className="bg-gradient-to-r from-primary via-rose-500 to-primary bg-clip-text text-transparent">
-              {c.heroTitle}
+              {homePageContent.heroTitle}
             </span>
           </motion.h1>
 
@@ -155,7 +157,7 @@ export default function HomePage() {
             custom={1}
             className="text-xl sm:text-2xl md:text-3xl font-light text-foreground/80 mb-3 sm:mb-4"
           >
-            {c.heroSubtitle}
+            {homePageContent.heroSubtitle}
           </motion.p>
 
           <motion.p
@@ -165,7 +167,7 @@ export default function HomePage() {
             custom={2}
             className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10"
           >
-            {c.heroDescription}
+            {homePageContent.heroDescription}
           </motion.p>
 
           <motion.div
@@ -180,7 +182,7 @@ export default function HomePage() {
               className="w-full sm:w-auto text-base px-8 py-6 rounded-full shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
               onClick={() => setCurrentPage("services")}
             >
-              {c.heroButtonText1}
+              {homePageContent.heroButtonText1}
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
             <Button
@@ -189,7 +191,7 @@ export default function HomePage() {
               className="w-full sm:w-auto text-base px-8 py-6 rounded-full border-primary/30 hover:bg-primary/5 transition-all duration-300"
               onClick={() => setCurrentPage("services")}
             >
-              {c.heroButtonText2}
+              {homePageContent.heroButtonText2}
             </Button>
           </motion.div>
         </div>
@@ -209,14 +211,14 @@ export default function HomePage() {
               variants={staggerItem}
               className="text-3xl sm:text-4xl font-bold mb-4"
             >
-              {c.whyChooseTitle}{" "}
-              <span className="text-primary">{c.whyChooseBrandName}</span>
+              {homePageContent.whyChooseTitle}{" "}
+              <span className="text-primary">{homePageContent.whyChooseBrandName}</span>
             </motion.h2>
             <motion.p
               variants={staggerItem}
               className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto"
             >
-              {c.whyChooseSubtitle}
+              {homePageContent.whyChooseSubtitle}
             </motion.p>
           </motion.div>
 
@@ -235,13 +237,13 @@ export default function HomePage() {
                     <Award className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                   </div>
                   <CardTitle className="text-3xl sm:text-4xl font-bold text-primary">
-                    {c.stat1Value}
+                    {homePageContent.stat1Value}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg font-semibold mb-1">{c.stat1Label}</p>
+                  <p className="text-lg font-semibold mb-1">{homePageContent.stat1Label}</p>
                   <p className="text-sm text-muted-foreground">
-                    {c.stat1Description}
+                    {homePageContent.stat1Description}
                   </p>
                 </CardContent>
               </Card>
@@ -255,13 +257,13 @@ export default function HomePage() {
                     <Users className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                   </div>
                   <CardTitle className="text-3xl sm:text-4xl font-bold text-primary">
-                    {c.stat2Value}
+                    {homePageContent.stat2Value}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg font-semibold mb-1">{c.stat2Label}</p>
+                  <p className="text-lg font-semibold mb-1">{homePageContent.stat2Label}</p>
                   <p className="text-sm text-muted-foreground">
-                    {c.stat2Description}
+                    {homePageContent.stat2Description}
                   </p>
                 </CardContent>
               </Card>
@@ -275,13 +277,13 @@ export default function HomePage() {
                     <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
                   </div>
                   <CardTitle className="text-3xl sm:text-4xl font-bold text-primary">
-                    {c.stat3Value}
+                    {homePageContent.stat3Value}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg font-semibold mb-1">{c.stat3Label}</p>
+                  <p className="text-lg font-semibold mb-1">{homePageContent.stat3Label}</p>
                   <p className="text-sm text-muted-foreground">
-                    {c.stat3Description}
+                    {homePageContent.stat3Description}
                   </p>
                 </CardContent>
               </Card>
@@ -304,13 +306,13 @@ export default function HomePage() {
               variants={staggerItem}
               className="text-3xl sm:text-4xl font-bold mb-4"
             >
-              {c.popularServicesTitle} <span className="text-primary">{c.popularServicesHighlight}</span>
+              {homePageContent.popularServicesTitle} <span className="text-primary">{homePageContent.popularServicesHighlight}</span>
             </motion.h2>
             <motion.p
               variants={staggerItem}
               className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto"
             >
-              {c.popularServicesSubtitle}
+              {homePageContent.popularServicesSubtitle}
             </motion.p>
           </motion.div>
 
@@ -365,7 +367,7 @@ export default function HomePage() {
               className="rounded-full px-8 py-6 border-primary/30 hover:bg-primary/5 transition-all duration-300"
               onClick={() => setCurrentPage("services")}
             >
-              {c.viewAllServicesButton}
+              {homePageContent.viewAllServicesButton}
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </motion.div>
@@ -412,13 +414,13 @@ export default function HomePage() {
               variants={staggerItem}
               className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6"
             >
-              {c.ctaTitle}
+              {homePageContent.ctaTitle}
             </motion.h2>
             <motion.p
               variants={staggerItem}
               className="text-lg sm:text-xl text-white/80 mb-8 sm:mb-10 max-w-xl mx-auto"
             >
-              {c.ctaDescription}
+              {homePageContent.ctaDescription}
             </motion.p>
             <motion.div variants={staggerItem}>
               <Button
@@ -426,7 +428,7 @@ export default function HomePage() {
                 className="bg-white text-primary hover:bg-white/90 rounded-full px-10 py-7 text-base sm:text-lg font-semibold shadow-xl shadow-black/10 transition-all duration-300 hover:scale-105"
                 onClick={() => setCurrentPage("services")}
               >
-                {c.ctaButtonText}
+                {homePageContent.ctaButtonText}
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </motion.div>
