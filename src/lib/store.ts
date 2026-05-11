@@ -141,6 +141,11 @@ function genId(): string {
 
 // ==================== STORE INTERFACE ====================
 interface AppState {
+  // Hydration
+  _hydrated: boolean;
+  _hasHydrated: () => boolean;
+  hydrate: () => void;
+
   // Navigation
   currentPage: Page;
   setCurrentPage: (page: Page) => void;
@@ -219,258 +224,277 @@ function saveToStorage(key: string, value: unknown) {
 }
 
 // ==================== CREATE STORE ====================
-export const useAppStore = create<AppState>((set, get) => {
-  const initialUsers = loadFromStorage<User[]>("labella_users", DEFAULT_USERS);
-  const initialServices = loadFromStorage<Service[]>("labella_services", DEFAULT_SERVICES);
-  const initialProducts = loadFromStorage<Product[]>("labella_products", DEFAULT_PRODUCTS);
-  const initialCart = loadFromStorage<CartItem[]>("labella_cart", []);
-  const initialAppointments = loadFromStorage<Appointment[]>("labella_appointments", []);
-  const initialGallery = loadFromStorage<GalleryImage[]>("labella_gallery", DEFAULT_GALLERY);
-  const initialReviews = loadFromStorage<Review[]>("labella_reviews", DEFAULT_REVIEWS);
+// Store is created with DEFAULT values first (safe for SSR),
+// then hydrated from localStorage on the client via hydrate()
+export const useAppStore = create<AppState>((set, get) => ({
+  // Hydration state
+  _hydrated: false,
+  _hasHydrated: () => get()._hydrated,
+  hydrate: () => {
+    if (get()._hydrated) return; // Only hydrate once
 
-  let initialUser: User | null = null;
-  if (typeof window !== "undefined") {
+    const users = loadFromStorage<User[]>("labella_users", DEFAULT_USERS);
+    const services = loadFromStorage<Service[]>("labella_services", DEFAULT_SERVICES);
+    const products = loadFromStorage<Product[]>("labella_products", DEFAULT_PRODUCTS);
+    const cart = loadFromStorage<CartItem[]>("labella_cart", []);
+    const appointments = loadFromStorage<Appointment[]>("labella_appointments", []);
+    const gallery = loadFromStorage<GalleryImage[]>("labella_gallery", DEFAULT_GALLERY);
+    const reviews = loadFromStorage<Review[]>("labella_reviews", DEFAULT_REVIEWS);
+    const homeButtonText = loadFromStorage<string>("labella_home_button_text", "Home");
+
+    let currentUser: User | null = null;
     const storedUserId = localStorage.getItem("labella_current_user_id");
     if (storedUserId) {
-      initialUser = initialUsers.find((u) => u.id === storedUserId) || null;
+      currentUser = users.find((u) => u.id === storedUserId) || null;
     }
-  }
 
-  return {
-    // Navigation
-    currentPage: "home" as Page,
-    setCurrentPage: (page) => set({ currentPage: page }),
+    set({
+      _hydrated: true,
+      users,
+      services,
+      products,
+      cart,
+      appointments,
+      gallery,
+      reviews,
+      homeButtonText,
+      currentUser,
+    });
+  },
 
-    // Auth
-    currentUser: initialUser,
-    login: (email, password) => {
-      const users = get().users;
-      const user = users.find((u) => u.email === email && u.password === password);
-      if (user) {
-        set({ currentUser: user, currentPage: "home" });
-        localStorage.setItem("labella_current_user_id", user.id);
-        return true;
-      }
-      return false;
-    },
-    register: (name, email, password) => {
-      const users = get().users;
-      if (users.find((u) => u.email === email)) return false;
-      const newUser: User = {
-        id: genId(),
-        name,
-        email,
-        password,
-        role: "user",
-        joinDate: new Date().toISOString().split("T")[0],
-      };
-      const updatedUsers = [...users, newUser];
-      set({ users: updatedUsers, currentUser: newUser, currentPage: "home" });
-      saveToStorage("labella_users", updatedUsers);
-      localStorage.setItem("labella_current_user_id", newUser.id);
+  // Navigation
+  currentPage: "home" as Page,
+  setCurrentPage: (page) => set({ currentPage: page }),
+
+  // Auth - default to null (will be set after hydration)
+  currentUser: null,
+  login: (email, password) => {
+    const users = get().users;
+    const user = users.find((u) => u.email === email && u.password === password);
+    if (user) {
+      set({ currentUser: user, currentPage: "home" });
+      localStorage.setItem("labella_current_user_id", user.id);
       return true;
-    },
-    logout: () => {
-      set({ currentUser: null, currentPage: "home", cart: [] });
-      localStorage.removeItem("labella_current_user_id");
-      saveToStorage("labella_cart", []);
-    },
-    changePassword: (oldPass, newPass) => {
-      const user = get().currentUser;
-      if (!user || user.password !== oldPass) return false;
-      const users = get().users.map((u) =>
-        u.id === user.id ? { ...u, password: newPass } : u
+    }
+    return false;
+  },
+  register: (name, email, password) => {
+    const users = get().users;
+    if (users.find((u) => u.email === email)) return false;
+    const newUser: User = {
+      id: genId(),
+      name,
+      email,
+      password,
+      role: "user",
+      joinDate: new Date().toISOString().split("T")[0],
+    };
+    const updatedUsers = [...users, newUser];
+    set({ users: updatedUsers, currentUser: newUser, currentPage: "home" });
+    saveToStorage("labella_users", updatedUsers);
+    localStorage.setItem("labella_current_user_id", newUser.id);
+    return true;
+  },
+  logout: () => {
+    set({ currentUser: null, currentPage: "home", cart: [] });
+    localStorage.removeItem("labella_current_user_id");
+    saveToStorage("labella_cart", []);
+  },
+  changePassword: (oldPass, newPass) => {
+    const user = get().currentUser;
+    if (!user || user.password !== oldPass) return false;
+    const users = get().users.map((u) =>
+      u.id === user.id ? { ...u, password: newPass } : u
+    );
+    const updatedUser = { ...user, password: newPass };
+    set({ users, currentUser: updatedUser });
+    saveToStorage("labella_users", users);
+    return true;
+  },
+
+  // Users - defaults (will be replaced on hydration)
+  users: DEFAULT_USERS,
+  setUsers: (users) => {
+    set({ users });
+    saveToStorage("labella_users", users);
+  },
+  changeUserRole: (userId, role) => {
+    const users = get().users.map((u) =>
+      u.id === userId ? { ...u, role } : u
+    );
+    set({ users });
+    saveToStorage("labella_users", users);
+    // Update current user if their role changed
+    const current = get().currentUser;
+    if (current && current.id === userId) {
+      set({ currentUser: { ...current, role } });
+    }
+  },
+  deleteUser: (userId) => {
+    const current = get().currentUser;
+    if (current && current.id === userId) return; // can't delete self
+    const users = get().users.filter((u) => u.id !== userId);
+    set({ users });
+    saveToStorage("labella_users", users);
+  },
+
+  // Services - defaults
+  services: DEFAULT_SERVICES,
+  addService: (service) => {
+    const services = [...get().services, { ...service, id: genId() }];
+    set({ services });
+    saveToStorage("labella_services", services);
+  },
+  updateService: (id, service) => {
+    const services = get().services.map((s) =>
+      s.id === id ? { ...s, ...service } : s
+    );
+    set({ services });
+    saveToStorage("labella_services", services);
+  },
+  deleteService: (id) => {
+    const services = get().services.filter((s) => s.id !== id);
+    set({ services });
+    saveToStorage("labella_services", services);
+  },
+
+  // Products - defaults
+  products: DEFAULT_PRODUCTS,
+  addProduct: (product) => {
+    const products = [...get().products, { ...product, id: genId() }];
+    set({ products });
+    saveToStorage("labella_products", products);
+  },
+  updateProduct: (id, product) => {
+    const products = get().products.map((p) =>
+      p.id === id ? { ...p, ...product } : p
+    );
+    set({ products });
+    saveToStorage("labella_products", products);
+  },
+  deleteProduct: (id) => {
+    const products = get().products.filter((p) => p.id !== id);
+    set({ products });
+    saveToStorage("labella_products", products);
+  },
+
+  // Cart - defaults
+  cart: [],
+  addToCart: (productId) => {
+    const cart = get().cart;
+    const existing = cart.find((c) => c.productId === productId);
+    let updatedCart: CartItem[];
+    if (existing) {
+      updatedCart = cart.map((c) =>
+        c.productId === productId ? { ...c, quantity: c.quantity + 1 } : c
       );
-      const updatedUser = { ...user, password: newPass };
-      set({ users, currentUser: updatedUser });
-      saveToStorage("labella_users", users);
-      return true;
-    },
+    } else {
+      updatedCart = [...cart, { productId, quantity: 1 }];
+    }
+    set({ cart: updatedCart });
+    saveToStorage("labella_cart", updatedCart);
+  },
+  removeFromCart: (productId) => {
+    const updatedCart = get().cart.filter((c) => c.productId !== productId);
+    set({ cart: updatedCart });
+    saveToStorage("labella_cart", updatedCart);
+  },
+  updateCartQuantity: (productId, quantity) => {
+    if (quantity <= 0) {
+      get().removeFromCart(productId);
+      return;
+    }
+    const updatedCart = get().cart.map((c) =>
+      c.productId === productId ? { ...c, quantity } : c
+    );
+    set({ cart: updatedCart });
+    saveToStorage("labella_cart", updatedCart);
+  },
+  clearCart: () => {
+    set({ cart: [] });
+    saveToStorage("labella_cart", []);
+  },
 
-    // Users
-    users: initialUsers,
-    setUsers: (users) => {
-      set({ users });
-      saveToStorage("labella_users", users);
-    },
-    changeUserRole: (userId, role) => {
-      const users = get().users.map((u) =>
-        u.id === userId ? { ...u, role } : u
-      );
-      set({ users });
-      saveToStorage("labella_users", users);
-      // Update current user if their role changed
-      const current = get().currentUser;
-      if (current && current.id === userId) {
-        set({ currentUser: { ...current, role } });
-      }
-    },
-    deleteUser: (userId) => {
-      const current = get().currentUser;
-      if (current && current.id === userId) return; // can't delete self
-      const users = get().users.filter((u) => u.id !== userId);
-      set({ users });
-      saveToStorage("labella_users", users);
-    },
+  // Appointments - defaults
+  appointments: [],
+  addAppointment: (serviceId, serviceName, date) => {
+    const user = get().currentUser;
+    if (!user) return;
+    const appointment: Appointment = {
+      id: genId(),
+      serviceId,
+      serviceName,
+      date,
+      userId: user.id,
+      userName: user.name,
+      status: "pending",
+    };
+    const appointments = [...get().appointments, appointment];
+    set({ appointments });
+    saveToStorage("labella_appointments", appointments);
+  },
+  confirmAppointment: (id) => {
+    const appointments = get().appointments.map((a) =>
+      a.id === id ? { ...a, status: "confirmed" as const } : a
+    );
+    set({ appointments });
+    saveToStorage("labella_appointments", appointments);
+  },
+  cancelAppointment: (id) => {
+    const appointments = get().appointments.map((a) =>
+      a.id === id ? { ...a, status: "cancelled" as const } : a
+    );
+    set({ appointments });
+    saveToStorage("labella_appointments", appointments);
+  },
 
-    // Services
-    services: initialServices,
-    addService: (service) => {
-      const services = [...get().services, { ...service, id: genId() }];
-      set({ services });
-      saveToStorage("labella_services", services);
-    },
-    updateService: (id, service) => {
-      const services = get().services.map((s) =>
-        s.id === id ? { ...s, ...service } : s
-      );
-      set({ services });
-      saveToStorage("labella_services", services);
-    },
-    deleteService: (id) => {
-      const services = get().services.filter((s) => s.id !== id);
-      set({ services });
-      saveToStorage("labella_services", services);
-    },
+  // Site Settings - defaults
+  homeButtonText: "Home",
+  setHomeButtonText: (text) => {
+    set({ homeButtonText: text });
+    saveToStorage("labella_home_button_text", text);
+  },
 
-    // Products
-    products: initialProducts,
-    addProduct: (product) => {
-      const products = [...get().products, { ...product, id: genId() }];
-      set({ products });
-      saveToStorage("labella_products", products);
-    },
-    updateProduct: (id, product) => {
-      const products = get().products.map((p) =>
-        p.id === id ? { ...p, ...product } : p
-      );
-      set({ products });
-      saveToStorage("labella_products", products);
-    },
-    deleteProduct: (id) => {
-      const products = get().products.filter((p) => p.id !== id);
-      set({ products });
-      saveToStorage("labella_products", products);
-    },
+  // Gallery - defaults
+  gallery: DEFAULT_GALLERY,
+  addGalleryImage: (url) => {
+    const user = get().currentUser;
+    if (!user) return;
+    const image: GalleryImage = {
+      id: genId(),
+      url,
+      addedBy: user.id,
+    };
+    const gallery = [...get().gallery, image];
+    set({ gallery });
+    saveToStorage("labella_gallery", gallery);
+  },
+  deleteGalleryImage: (id) => {
+    const gallery = get().gallery.filter((g) => g.id !== id);
+    set({ gallery });
+    saveToStorage("labella_gallery", gallery);
+  },
 
-    // Cart
-    cart: initialCart,
-    addToCart: (productId) => {
-      const cart = get().cart;
-      const existing = cart.find((c) => c.productId === productId);
-      let updatedCart: CartItem[];
-      if (existing) {
-        updatedCart = cart.map((c) =>
-          c.productId === productId ? { ...c, quantity: c.quantity + 1 } : c
-        );
-      } else {
-        updatedCart = [...cart, { productId, quantity: 1 }];
-      }
-      set({ cart: updatedCart });
-      saveToStorage("labella_cart", updatedCart);
-    },
-    removeFromCart: (productId) => {
-      const updatedCart = get().cart.filter((c) => c.productId !== productId);
-      set({ cart: updatedCart });
-      saveToStorage("labella_cart", updatedCart);
-    },
-    updateCartQuantity: (productId, quantity) => {
-      if (quantity <= 0) {
-        get().removeFromCart(productId);
-        return;
-      }
-      const updatedCart = get().cart.map((c) =>
-        c.productId === productId ? { ...c, quantity } : c
-      );
-      set({ cart: updatedCart });
-      saveToStorage("labella_cart", updatedCart);
-    },
-    clearCart: () => {
-      set({ cart: [] });
-      saveToStorage("labella_cart", []);
-    },
-
-    // Appointments
-    appointments: initialAppointments,
-    addAppointment: (serviceId, serviceName, date) => {
-      const user = get().currentUser;
-      if (!user) return;
-      const appointment: Appointment = {
-        id: genId(),
-        serviceId,
-        serviceName,
-        date,
-        userId: user.id,
-        userName: user.name,
-        status: "pending",
-      };
-      const appointments = [...get().appointments, appointment];
-      set({ appointments });
-      saveToStorage("labella_appointments", appointments);
-    },
-    confirmAppointment: (id) => {
-      const appointments = get().appointments.map((a) =>
-        a.id === id ? { ...a, status: "confirmed" as const } : a
-      );
-      set({ appointments });
-      saveToStorage("labella_appointments", appointments);
-    },
-    cancelAppointment: (id) => {
-      const appointments = get().appointments.map((a) =>
-        a.id === id ? { ...a, status: "cancelled" as const } : a
-      );
-      set({ appointments });
-      saveToStorage("labella_appointments", appointments);
-    },
-
-    // Site Settings
-    homeButtonText: loadFromStorage<string>("labella_home_button_text", "Home"),
-    setHomeButtonText: (text) => {
-      set({ homeButtonText: text });
-      saveToStorage("labella_home_button_text", text);
-    },
-
-    // Gallery
-    gallery: initialGallery,
-    addGalleryImage: (url) => {
-      const user = get().currentUser;
-      if (!user) return;
-      const image: GalleryImage = {
-        id: genId(),
-        url,
-        addedBy: user.id,
-      };
-      const gallery = [...get().gallery, image];
-      set({ gallery });
-      saveToStorage("labella_gallery", gallery);
-    },
-    deleteGalleryImage: (id) => {
-      const gallery = get().gallery.filter((g) => g.id !== id);
-      set({ gallery });
-      saveToStorage("labella_gallery", gallery);
-    },
-
-    // Reviews
-    reviews: initialReviews,
-    addReview: (text, rating) => {
-      const user = get().currentUser;
-      if (!user) return;
-      const review: Review = {
-        id: genId(),
-        userId: user.id,
-        userName: user.name,
-        text,
-        rating,
-        date: new Date().toISOString().split("T")[0],
-      };
-      const reviews = [...get().reviews, review];
-      set({ reviews });
-      saveToStorage("labella_reviews", reviews);
-    },
-    deleteReview: (id) => {
-      const reviews = get().reviews.filter((r) => r.id !== id);
-      set({ reviews });
-      saveToStorage("labella_reviews", reviews);
-    },
-  };
-});
+  // Reviews - defaults
+  reviews: DEFAULT_REVIEWS,
+  addReview: (text, rating) => {
+    const user = get().currentUser;
+    if (!user) return;
+    const review: Review = {
+      id: genId(),
+      userId: user.id,
+      userName: user.name,
+      text,
+      rating,
+      date: new Date().toISOString().split("T")[0],
+    };
+    const reviews = [...get().reviews, review];
+    set({ reviews });
+    saveToStorage("labella_reviews", reviews);
+  },
+  deleteReview: (id) => {
+    const reviews = get().reviews.filter((r) => r.id !== id);
+    set({ reviews });
+    saveToStorage("labella_reviews", reviews);
+  },
+}));

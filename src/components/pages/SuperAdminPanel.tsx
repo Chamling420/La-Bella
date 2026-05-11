@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore, type UserRole, type User, type Service, type Product, type Appointment } from '@/lib/store';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -1284,6 +1284,11 @@ function SettingsTab({
   setHomeButtonText: (text: string) => void;
 }) {
   const [homeTextEditing, setHomeTextEditing] = useState(homeButtonText);
+
+  // Sync local state when store value changes externally
+  useEffect(() => {
+    setHomeTextEditing(homeButtonText);
+  }, [homeButtonText]);
 
   return (
     <>

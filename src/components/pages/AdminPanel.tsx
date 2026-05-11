@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import {
@@ -178,6 +178,11 @@ export default function AdminPanel() {
 
   // Home button text state
   const [homeTextEditing, setHomeTextEditing] = useState(homeButtonText);
+
+  // Sync local state when store value changes externally
+  useEffect(() => {
+    setHomeTextEditing(homeButtonText);
+  }, [homeButtonText]);
 
   // ===== Access Control =====
   if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'superadmin')) {
