@@ -66,6 +66,7 @@ import {
   Sparkles,
   MapPin,
 } from 'lucide-react';
+import ImageUpload from '@/components/ui/image-upload';
 
 // ==================== HELPERS ====================
 
@@ -919,15 +920,11 @@ function ManageProductsTab({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="prod-image">Image URL</Label>
-              <Input
-                id="prod-image"
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                placeholder="https://..."
-              />
-            </div>
+            <ImageUpload
+              value={image}
+              onChange={(url) => setImage(url)}
+              label="Product Image"
+            />
           </div>
           <DialogFooter>
             <Button

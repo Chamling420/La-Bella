@@ -73,6 +73,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ImageUpload from '@/components/ui/image-upload';
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -1707,7 +1708,7 @@ export default function AdminPanel() {
 
         {/* ===== Product Dialog ===== */}
         <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-primary" />
@@ -1760,29 +1761,13 @@ export default function AdminPanel() {
                   </Select>
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="product-image">Image URL</Label>
-                <Input
-                  id="product-image"
-                  placeholder="https://example.com/image.jpg"
-                  value={productForm.image}
-                  onChange={(e) =>
-                    setProductForm((prev) => ({ ...prev, image: e.target.value }))
-                  }
-                />
-                {productForm.image && (
-                  <div className="mt-2 w-full aspect-video rounded-lg overflow-hidden bg-muted border">
-                    <img
-                      src={productForm.image}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              <ImageUpload
+                value={productForm.image}
+                onChange={(url) =>
+                  setProductForm((prev) => ({ ...prev, image: url }))
+                }
+                label="Product Image"
+              />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button

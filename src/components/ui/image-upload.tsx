@@ -14,7 +14,9 @@ interface ImageUploadProps {
 }
 
 export default function ImageUpload({ value, onChange, label = 'Product Image' }: ImageUploadProps) {
-  const [mode, setMode] = useState<'upload' | 'url'>(value && !value.startsWith('/uploads/') ? 'url' : 'upload');
+  const [mode, setMode] = useState<'upload' | 'url'>(
+    value && value.startsWith('http') ? 'url' : 'upload'
+  );
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -202,8 +204,21 @@ export default function ImageUpload({ value, onChange, label = 'Product Image' }
                     <ImagePlus className="w-6 h-6 text-primary" />
                   </div>
                   <div className="text-center">
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      className="rounded-full shadow-lg shadow-primary/25 gap-1.5 mb-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Select Your Image
+                    </Button>
                     <p className="text-sm font-medium text-foreground">
-                      Click to select or drag & drop
+                      or drag & drop here
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       JPEG, PNG, GIF, WebP, SVG (max 5MB)
@@ -217,7 +232,7 @@ export default function ImageUpload({ value, onChange, label = 'Product Image' }
       ) : (
         <div className="space-y-2">
           <Input
-            value={value && !value.startsWith('/uploads/') ? value : ''}
+            value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="https://example.com/image.jpg"
           />

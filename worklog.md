@@ -89,3 +89,41 @@ Stage Summary:
 - Home page content updates instantly when user navigates to Home page
 - No more "navigate to Home to see changes" - changes are live immediately
 - Proper Zustand selectors ensure optimal re-render behavior
+
+---
+Task ID: 4
+Agent: Main Developer
+Task: Add direct image upload from device to product section (both Admin and Super Admin panels)
+
+Work Log:
+- Created API route for image uploads at src/app/api/upload/route.ts
+  - Accepts multipart/form-data file uploads
+  - Validates file type (JPEG, PNG, GIF, WebP, SVG) and size (max 5MB)
+  - Saves files to public/uploads/ directory with unique filenames
+  - Returns the public URL path (/uploads/filename)
+- Created reusable ImageUpload component at src/components/ui/image-upload.tsx
+  - Two modes: "Upload from Device" and "Enter URL" with toggle buttons
+  - Upload mode: drag & drop zone with "Select Your Image" button, click to browse
+  - File validation on client side (type + size) before uploading
+  - Loading spinner during upload
+  - Image preview with hover controls (re-upload / delete)
+  - URL mode: text input with live image preview
+  - Auto-detects mode based on existing value (http URLs → URL mode, else upload mode)
+- Updated AdminPanel.tsx (line ~1709)
+  - Replaced "Image URL" Label+Input with ImageUpload component
+  - Added import for ImageUpload component
+  - Widened product dialog from sm:max-w-md to sm:max-w-lg for better upload area
+- Updated SuperAdminPanel.tsx (line ~922)
+  - Replaced "Image URL" Label+Input with ImageUpload component
+  - Added import for ImageUpload component
+- Created public/uploads/ directory for storing uploaded images
+- Lint passes clean, dev server compiles without errors
+
+Stage Summary:
+- Product image upload now supports two methods:
+  1. Direct upload from device (gallery/file picker) via "Select Your Image" button or drag & drop
+  2. Paste image URL (external links) via "Enter URL" mode
+- Both Admin Panel and Super Admin Panel product dialogs now use the new ImageUpload component
+- Uploaded images are stored in public/uploads/ and referenced by /uploads/filename URL
+- File validation: JPEG/PNG/GIF/WebP/SVG only, max 5MB
+- User-friendly UX with preview, hover controls, and toast notifications
