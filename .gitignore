@@ -66,3 +66,7 @@ examples/
 upload/
 db/
 dev.log
+
+# Uploaded images (runtime files)
+public/uploads/*
+!public/uploads/.gitkeep
