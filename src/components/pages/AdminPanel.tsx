@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAppStore } from '@/lib/store';
+import { useAppStore, type Order } from '@/lib/store';
 import {
   Card,
   CardContent,
@@ -31,7 +31,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -71,6 +70,18 @@ import {
   Clock,
   Settings,
   MapPin,
+  MessageSquare,
+  Package,
+  Send,
+  Mail,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  CreditCard,
+  Save,
+  X,
+  AlertTriangle,
+  Truck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ui/image-upload';
@@ -119,6 +130,32 @@ function formatDate(dateStr: string): string {
   }
 }
 
+function formatDateTime(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function getPaymentMethodLabel(method: string): string {
+  switch (method) {
+    case 'cash_on_delivery': return 'Cash on Delivery';
+    case 'bank': return 'Bank Transfer';
+    case 'esewa': return 'eSewa';
+    case 'khalti': return 'Khalti';
+    case 'imepay': return 'IME Pay';
+    default: return method;
+  }
+}
+
 // ========== Service Form State ==========
 interface ServiceForm {
   name: string;
@@ -150,35 +187,71 @@ const emptyProductForm: ProductForm = {
 };
 
 export default function AdminPanel() {
-  const {
-    currentUser,
-    services,
-    products,
-    appointments,
-    users,
-    addService,
-    updateService,
-    deleteService,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    confirmAppointment,
-    cancelAppointment,
-    homeButtonText,
-    setHomeButtonText,
-    homePageContent,
-    setHomePageContent,
-  } = useAppStore();
+  // ===== Store selectors =====
+  const currentUser = useAppStore(s => s.currentUser);
+  const services = useAppStore(s => s.services);
+  const addService = useAppStore(s => s.addService);
+  const updateService = useAppStore(s => s.updateService);
+  const deleteService = useAppStore(s => s.deleteService);
+  const products = useAppStore(s => s.products);
+  const addProduct = useAppStore(s => s.addProduct);
+  const updateProduct = useAppStore(s => s.updateProduct);
+  const deleteProduct = useAppStore(s => s.deleteProduct);
+  const appointments = useAppStore(s => s.appointments);
+  const confirmAppointment = useAppStore(s => s.confirmAppointment);
+  const cancelAppointment = useAppStore(s => s.cancelAppointment);
+  const users = useAppStore(s => s.users);
+  const homeButtonText = useAppStore(s => s.homeButtonText);
+  const setHomeButtonText = useAppStore(s => s.setHomeButtonText);
+  const homePageContent = useAppStore(s => s.homePageContent);
+  const setHomePageContent = useAppStore(s => s.setHomePageContent);
+  const messages = useAppStore(s => s.messages);
+  const replyToMessage = useAppStore(s => s.replyToMessage);
+  const markMessageRead = useAppStore(s => s.markMessageRead);
+  const deleteMessage = useAppStore(s => s.deleteMessage);
+  const orders = useAppStore(s => s.orders);
+  const confirmOrder = useAppStore(s => s.confirmOrder);
+  const cancelOrder = useAppStore(s => s.cancelOrder);
 
-  // Service dialog state
+  // ===== State - existing =====
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [serviceForm, setServiceForm] = useState<ServiceForm>(emptyServiceForm);
-
-  // Product dialog state
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
+
+  // ===== State - new =====
+  const [activeTab, setActiveTab] = useState('services');
+  const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
+  const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
+  const [paymentSlipViewerOpen, setPaymentSlipViewerOpen] = useState(false);
+  const [paymentSlipUrl, setPaymentSlipUrl] = useState('');
+  const [paymentDetailsOpen, setPaymentDetailsOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // ===== Unsaved changes state =====
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+
+  // ===== Computed values =====
+  const unreadCount = messages.filter(m => !m.read).length;
+  const pendingOrderCount = orders.filter(o => o.status === 'pending').length;
+  const hasUnsavedChanges =
+    serviceDialogOpen ||
+    productDialogOpen ||
+    Object.values(replyTexts).some(t => t.trim() !== '');
+
+  // ===== BeforeUnload for browser close/refresh =====
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
 
   // ===== Access Control =====
   if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'superadmin')) {
@@ -330,6 +403,127 @@ export default function AdminPanel() {
     toast.success('Appointment cancelled');
   };
 
+  // ===== Message Handlers =====
+  const handleExpandMessage = (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message && !message.read) {
+      markMessageRead(messageId);
+    }
+    setExpandedMessageId(prev => prev === messageId ? null : messageId);
+  };
+
+  const handleReplySubmit = (messageId: string) => {
+    const text = replyTexts[messageId]?.trim();
+    if (!text) return;
+    replyToMessage(messageId, text);
+    setReplyTexts(prev => {
+      const next = { ...prev };
+      delete next[messageId];
+      return next;
+    });
+    toast.success('Reply sent');
+  };
+
+  // ===== Tab Change Handler (with unsaved changes check) =====
+  const handleTabChange = (newTab: string) => {
+    if (hasUnsavedChanges) {
+      setPendingTab(newTab);
+      setUnsavedDialogOpen(true);
+    } else {
+      setActiveTab(newTab);
+    }
+  };
+
+  const handleUnsavedSave = () => {
+    // Save service form if valid
+    if (serviceDialogOpen && serviceForm.name.trim() && serviceForm.price && serviceForm.duration.trim()) {
+      const priceNum = parseFloat(serviceForm.price);
+      if (!isNaN(priceNum) && priceNum > 0) {
+        if (editingServiceId) {
+          updateService(editingServiceId, {
+            name: serviceForm.name.trim(),
+            price: priceNum,
+            duration: serviceForm.duration.trim(),
+            icon: serviceForm.icon,
+          });
+          toast.success('Service updated');
+        } else {
+          addService({
+            name: serviceForm.name.trim(),
+            price: priceNum,
+            duration: serviceForm.duration.trim(),
+            icon: serviceForm.icon,
+          });
+          toast.success('Service added');
+        }
+      }
+    }
+    if (serviceDialogOpen) {
+      setServiceDialogOpen(false);
+      setServiceForm(emptyServiceForm);
+      setEditingServiceId(null);
+    }
+
+    // Save product form if valid
+    if (productDialogOpen && productForm.name.trim() && productForm.price && productForm.category) {
+      const priceNum = parseFloat(productForm.price);
+      if (!isNaN(priceNum) && priceNum > 0) {
+        if (editingProductId) {
+          updateProduct(editingProductId, {
+            name: productForm.name.trim(),
+            price: priceNum,
+            category: productForm.category,
+            image: productForm.image.trim(),
+          });
+          toast.success('Product updated');
+        } else {
+          addProduct({
+            name: productForm.name.trim(),
+            price: priceNum,
+            category: productForm.category,
+            image: productForm.image.trim(),
+          });
+          toast.success('Product added');
+        }
+      }
+    }
+    if (productDialogOpen) {
+      setProductDialogOpen(false);
+      setProductForm(emptyProductForm);
+      setEditingProductId(null);
+    }
+
+    // Send pending replies
+    Object.entries(replyTexts).forEach(([msgId, text]) => {
+      if (text.trim()) {
+        replyToMessage(msgId, text.trim());
+        toast.success('Reply sent');
+      }
+    });
+    setReplyTexts({});
+
+    // Proceed to new tab
+    setUnsavedDialogOpen(false);
+    if (pendingTab) setActiveTab(pendingTab);
+    setPendingTab(null);
+  };
+
+  const handleUnsavedDiscard = () => {
+    // Close dialogs without saving
+    setServiceDialogOpen(false);
+    setServiceForm(emptyServiceForm);
+    setEditingServiceId(null);
+    setProductDialogOpen(false);
+    setProductForm(emptyProductForm);
+    setEditingProductId(null);
+    // Clear reply texts
+    setReplyTexts({});
+    // Proceed to new tab
+    setUnsavedDialogOpen(false);
+    if (pendingTab) setActiveTab(pendingTab);
+    setPendingTab(null);
+  };
+
   // ===== Category badge color =====
   const getCategoryBadge = (category: string) => {
     switch (category) {
@@ -351,6 +545,20 @@ export default function AdminPanel() {
         return 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100';
       case 'admin':
         return 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/10';
+      default:
+        return 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100';
+    }
+  };
+
+  // ===== Order status badge color =====
+  const getOrderStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100';
+      case 'confirmed':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
+      case 'cancelled':
+        return 'bg-red-100 text-red-600 border-red-200 hover:bg-red-100 line-through';
       default:
         return 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100';
     }
@@ -382,7 +590,7 @@ export default function AdminPanel() {
 
       {/* Content */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="services" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="mb-6 w-full sm:w-auto flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="services" className="flex-1 sm:flex-none gap-1.5">
               <Scissors className="w-4 h-4" />
@@ -399,6 +607,24 @@ export default function AdminPanel() {
             <TabsTrigger value="users" className="flex-1 sm:flex-none gap-1.5">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex-1 sm:flex-none gap-1.5">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Messages</span>
+              {unreadCount > 0 && (
+                <Badge className="ml-0.5 h-5 min-w-5 px-1.5 text-[10px] bg-destructive text-destructive-foreground rounded-full">
+                  {unreadCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex-1 sm:flex-none gap-1.5">
+              <Package className="w-4 h-4" />
+              <span className="hidden sm:inline">Orders</span>
+              {pendingOrderCount > 0 && (
+                <Badge className="ml-0.5 h-5 min-w-5 px-1.5 text-[10px] bg-amber-500 text-white rounded-full">
+                  {pendingOrderCount}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex-1 sm:flex-none gap-1.5">
               <Settings className="w-4 h-4" />
@@ -930,7 +1156,7 @@ export default function AdminPanel() {
                                         </AlertDialog>
                                       )}
                                       {appointment.status === 'cancelled' && (
-                                        <span className="text-xs text-muted-foreground">—</span>
+                                        <span className="text-xs text-muted-foreground">&mdash;</span>
                                       )}
                                     </div>
                                   </TableCell>
@@ -1205,7 +1431,512 @@ export default function AdminPanel() {
             </motion.div>
           </TabsContent>
 
-          {/* ===== TAB 5: Settings ===== */}
+          {/* ===== TAB 5: Messages ===== */}
+          <TabsContent value="messages">
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold">Messages</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {messages.length} messages{unreadCount > 0 ? ` (${unreadCount} unread)` : ''}
+                  </p>
+                </div>
+              </div>
+
+              {messages.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Mail className="w-8 h-8 text-primary/50" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No Messages</h3>
+                  <p className="text-muted-foreground">No messages from users yet.</p>
+                </div>
+              ) : (
+                <div className="max-h-[600px] overflow-y-auto space-y-3 pr-1">
+                  {[...messages]
+                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                    .map((message) => {
+                      const isExpanded = expandedMessageId === message.id;
+                      return (
+                        <motion.div key={message.id} variants={staggerItem}>
+                          <Card className={`transition-all ${!message.read ? 'border-primary/30 bg-primary/5' : ''} ${isExpanded ? 'ring-1 ring-primary/20' : ''}`}>
+                            <CardContent className="p-4">
+                              {/* Message header - clickable to expand */}
+                              <div
+                                className="flex items-start gap-3 cursor-pointer"
+                                onClick={() => handleExpandMessage(message.id)}
+                              >
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
+                                  {message.userName
+                                    .split(' ')
+                                    .map(n => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className={`font-semibold text-sm ${!message.read ? 'text-primary' : ''}`}>
+                                      {message.userName}
+                                    </h3>
+                                    {!message.read && (
+                                      <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                                    )}
+                                    {isExpanded ? (
+                                      <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">{message.userEmail}</p>
+                                  {!isExpanded && (
+                                    <p className="text-sm text-muted-foreground mt-1 truncate">{message.text}</p>
+                                  )}
+                                </div>
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDateTime(message.timestamp)}
+                                  </span>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 p-0 hover:text-red-600"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete this message from{' '}
+                                          <span className="font-semibold text-foreground">{message.userName}</span>?
+                                          This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => {
+                                            deleteMessage(message.id);
+                                            if (expandedMessageId === message.id) setExpandedMessageId(null);
+                                            toast.success('Message deleted');
+                                          }}
+                                          className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              </div>
+
+                              {/* Expanded content */}
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  className="mt-3 space-y-3"
+                                >
+                                  {/* Full message */}
+                                  <div className="bg-muted/50 rounded-lg p-3">
+                                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                                  </div>
+
+                                  {/* Replies */}
+                                  {message.replies.length > 0 && (
+                                    <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                                      {message.replies.map((reply) => (
+                                        <div key={reply.id} className="bg-primary/5 rounded-lg p-3">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-xs font-semibold text-primary">{reply.adminName}</span>
+                                            <span className="text-xs text-muted-foreground">{formatDateTime(reply.timestamp)}</span>
+                                          </div>
+                                          <p className="text-sm whitespace-pre-wrap">{reply.text}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Reply input */}
+                                  <div className="flex gap-2">
+                                    <Input
+                                      placeholder="Type your reply..."
+                                      value={replyTexts[message.id] || ''}
+                                      onChange={(e) => setReplyTexts(prev => ({ ...prev, [message.id]: e.target.value }))}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && replyTexts[message.id]?.trim()) {
+                                          e.preventDefault();
+                                          handleReplySubmit(message.id);
+                                        }
+                                      }}
+                                      className="flex-1"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleReplySubmit(message.id)}
+                                      disabled={!replyTexts[message.id]?.trim()}
+                                      className="rounded-full shadow-lg shadow-primary/25"
+                                    >
+                                      <Send className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                </div>
+              )}
+            </motion.div>
+          </TabsContent>
+
+          {/* ===== TAB 6: Orders ===== */}
+          <TabsContent value="orders">
+            <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold">Orders</h2>
+                <p className="text-sm text-muted-foreground">
+                  {orders.length} orders{pendingOrderCount > 0 ? ` (${pendingOrderCount} pending)` : ''}
+                </p>
+              </div>
+
+              {orders.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Package className="w-8 h-8 text-primary/50" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No Orders</h3>
+                  <p className="text-muted-foreground">No orders have been placed yet.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block">
+                    <Card>
+                      <CardContent className="p-0">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Order ID</TableHead>
+                              <TableHead>Customer</TableHead>
+                              <TableHead>Items</TableHead>
+                              <TableHead>Total</TableHead>
+                              <TableHead>Payment</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Date</TableHead>
+                              <TableHead className="text-right">Action</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {[...orders]
+                              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                              .map((order) => (
+                                <TableRow key={order.id}>
+                                  <TableCell className="font-mono text-xs">#{order.id.slice(-6)}</TableCell>
+                                  <TableCell>
+                                    <div>
+                                      <p className="font-medium text-sm">{order.userName}</p>
+                                      <p className="text-xs text-muted-foreground">{order.userEmail}</p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="max-w-48">
+                                      {order.items.map((item, idx) => (
+                                        <div key={idx} className="text-xs">
+                                          {item.productName} &times; {item.quantity}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="font-semibold">NPR {order.total}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="text-xs">
+                                      {order.paymentMethod === 'cash_on_delivery' ? (
+                                        <Truck className="w-3 h-3 mr-1" />
+                                      ) : (
+                                        <CreditCard className="w-3 h-3 mr-1" />
+                                      )}
+                                      {getPaymentMethodLabel(order.paymentMethod)}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className={getOrderStatusBadge(order.status)}>
+                                      {order.status === 'pending' ? (
+                                        <Clock className="w-3 h-3 mr-1" />
+                                      ) : order.status === 'confirmed' ? (
+                                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                                      ) : (
+                                        <XCircle className="w-3 h-3 mr-1" />
+                                      )}
+                                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs text-muted-foreground">
+                                    {formatDateTime(order.createdAt)}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      {order.paymentMethod !== 'cash_on_delivery' && (order.fullName || order.transactionNumber || order.paymentSlip) && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-7 p-0 hover:text-primary"
+                                          onClick={() => {
+                                            setSelectedOrder(order);
+                                            setPaymentDetailsOpen(true);
+                                          }}
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </Button>
+                                      )}
+                                      {order.status === 'pending' && (
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 rounded-full text-xs h-7"
+                                            >
+                                              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                              Confirm
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Confirm Order</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Are you sure you want to confirm order{' '}
+                                                <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => {
+                                                  confirmOrder(order.id);
+                                                  toast.success('Order confirmed');
+                                                }}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                                              >
+                                                Yes, Confirm
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
+                                      {(order.status === 'pending' || order.status === 'confirmed') && (
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 rounded-full text-xs h-7"
+                                            >
+                                              <XCircle className="w-3.5 h-3.5 mr-1" />
+                                              Cancel
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Are you sure you want to cancel order{' '}
+                                                <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                                This action cannot be undone.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel className="rounded-full">Keep Order</AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => {
+                                                  cancelOrder(order.id);
+                                                  toast.success('Order cancelled');
+                                                }}
+                                                className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                              >
+                                                Yes, Cancel
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
+                                      {order.status === 'cancelled' && (
+                                        <span className="text-xs text-muted-foreground">&mdash;</span>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="md:hidden grid gap-3">
+                    {[...orders]
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((order) => (
+                        <motion.div key={order.id} variants={staggerItem}>
+                          <Card className={`transition-shadow hover:shadow-lg hover:shadow-primary/5 ${order.status === 'cancelled' ? 'opacity-70' : ''}`}>
+                            <CardContent className="p-4">
+                              {/* Header: Order ID + Status */}
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-mono text-xs text-muted-foreground">#{order.id.slice(-6)}</span>
+                                <Badge variant="outline" className={getOrderStatusBadge(order.status)}>
+                                  {order.status === 'pending' ? (
+                                    <Clock className="w-3 h-3 mr-1" />
+                                  ) : order.status === 'confirmed' ? (
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  ) : (
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                  )}
+                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </Badge>
+                              </div>
+
+                              {/* Customer */}
+                              <p className="font-semibold text-sm">{order.userName}</p>
+                              <p className="text-xs text-muted-foreground">{order.userEmail}</p>
+
+                              {/* Items */}
+                              <div className="mt-2 space-y-0.5">
+                                {order.items.map((item, idx) => (
+                                  <p key={idx} className="text-xs text-muted-foreground">
+                                    {item.productName} &times; {item.quantity} &mdash; NPR {item.price * item.quantity}
+                                  </p>
+                                ))}
+                              </div>
+
+                              {/* Total + Payment */}
+                              <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                                <span className="font-semibold text-sm">NPR {order.total}</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {order.paymentMethod === 'cash_on_delivery' ? (
+                                    <Truck className="w-3 h-3 mr-1" />
+                                  ) : (
+                                    <CreditCard className="w-3 h-3 mr-1" />
+                                  )}
+                                  {getPaymentMethodLabel(order.paymentMethod)}
+                                </Badge>
+                              </div>
+
+                              {/* Date */}
+                              <p className="text-xs text-muted-foreground mt-1">{formatDateTime(order.createdAt)}</p>
+
+                              {/* Payment verification details for online payments */}
+                              {order.paymentMethod !== 'cash_on_delivery' && (order.fullName || order.transactionNumber || order.paymentSlip) && (
+                                <div className="mt-2 p-2 bg-muted/50 rounded-lg text-xs space-y-1">
+                                  <p className="font-medium text-primary mb-1">Payment Verification</p>
+                                  {order.fullName && <p><span className="font-medium">Name:</span> {order.fullName}</p>}
+                                  {order.transactionNumber && <p><span className="font-medium">Transaction #:</span> {order.transactionNumber}</p>}
+                                  {order.paymentSlip && (
+                                    <div>
+                                      <p className="font-medium mb-1">Payment Slip:</p>
+                                      <img
+                                        src={order.paymentSlip}
+                                        alt="Payment slip"
+                                        className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => {
+                                          setPaymentSlipUrl(order.paymentSlip!);
+                                          setPaymentSlipViewerOpen(true);
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Actions */}
+                              <div className="flex items-center gap-2 mt-3">
+                                {order.status === 'pending' && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 rounded-full text-xs h-7 flex-1"
+                                      >
+                                        <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Confirm
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirm Order</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to confirm order{' '}
+                                          <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => {
+                                            confirmOrder(order.id);
+                                            toast.success('Order confirmed');
+                                          }}
+                                          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                                        >
+                                          Yes, Confirm
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                                {(order.status === 'pending' || order.status === 'confirmed') && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-red-600 border-red-200 hover:bg-red-50 rounded-full text-xs h-7 flex-1"
+                                      >
+                                        <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to cancel order{' '}
+                                          <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel className="rounded-full">Keep Order</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => {
+                                            cancelOrder(order.id);
+                                            toast.success('Order cancelled');
+                                          }}
+                                          className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                        >
+                                          Yes, Cancel
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      ))}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </TabsContent>
+
+          {/* ===== TAB 7: Settings ===== */}
           <TabsContent value="settings">
             <motion.div variants={staggerContainer} initial="hidden" animate="visible">
               <div className="mb-6">
@@ -1229,11 +1960,11 @@ export default function AdminPanel() {
                         Change the text displayed on the &quot;Home&quot; navigation button.
                       </p>
                       <Input
-                          id="home-btn-text"
-                          value={homeButtonText}
-                          onChange={(e) => setHomeButtonText(e.target.value)}
-                          placeholder="Home"
-                        />
+                        id="home-btn-text"
+                        value={homeButtonText}
+                        onChange={(e) => setHomeButtonText(e.target.value)}
+                        placeholder="Home"
+                      />
                       <p className="text-xs text-muted-foreground">
                         Changes are saved automatically and update the navbar in real-time.
                       </p>
@@ -1592,6 +2323,48 @@ export default function AdminPanel() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Social Media Links */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-primary" />
+                      Social Media Links
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Edit the social media links displayed in the footer. Changes take effect immediately.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="hp-footerInstagramLink" className="text-xs">Instagram Link</Label>
+                      <Input id="hp-footerInstagramLink" value={homePageContent.footerInstagramLink} onChange={(e) => setHomePageContent({ footerInstagramLink: e.target.value })} placeholder="https://instagram.com/..." />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="hp-footerFacebookLink" className="text-xs">Facebook Link</Label>
+                      <Input id="hp-footerFacebookLink" value={homePageContent.footerFacebookLink} onChange={(e) => setHomePageContent({ footerFacebookLink: e.target.value })} placeholder="https://facebook.com/..." />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="hp-footerTwitterLink" className="text-xs">Twitter Link</Label>
+                      <Input id="hp-footerTwitterLink" value={homePageContent.footerTwitterLink} onChange={(e) => setHomePageContent({ footerTwitterLink: e.target.value })} placeholder="https://twitter.com/..." />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="hp-footerTiktokLink" className="text-xs">TikTok Link</Label>
+                      <Input id="hp-footerTiktokLink" value={homePageContent.footerTiktokLink} onChange={(e) => setHomePageContent({ footerTiktokLink: e.target.value })} placeholder="https://tiktok.com/@..." />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="hp-footerYoutubeLink" className="text-xs">YouTube Link</Label>
+                      <Input id="hp-footerYoutubeLink" value={homePageContent.footerYoutubeLink} onChange={(e) => setHomePageContent({ footerYoutubeLink: e.target.value })} placeholder="https://youtube.com/@..." />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="hp-footerWhatsappLink" className="text-xs">WhatsApp Link/Number</Label>
+                      <Input id="hp-footerWhatsappLink" value={homePageContent.footerWhatsappLink} onChange={(e) => setHomePageContent({ footerWhatsappLink: e.target.value })} placeholder="https://wa.me/9779800000000" />
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-1">
+                      Changes are saved automatically. Leave a field empty to hide the icon in the footer.
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
             </motion.div>
           </TabsContent>
@@ -1691,7 +2464,7 @@ export default function AdminPanel() {
                 </Select>
               </div>
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
+            <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setServiceDialogOpen(false)}
@@ -1702,7 +2475,7 @@ export default function AdminPanel() {
               <Button onClick={handleSaveService} className="rounded-full shadow-lg shadow-primary/25">
                 {editingServiceId ? 'Update' : 'Add'} Service
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -1769,7 +2542,7 @@ export default function AdminPanel() {
                 label="Product Image"
               />
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
+            <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setProductDialogOpen(false)}
@@ -1780,9 +2553,100 @@ export default function AdminPanel() {
               <Button onClick={handleSaveProduct} className="rounded-full shadow-lg shadow-primary/25">
                 {editingProductId ? 'Update' : 'Add'} Product
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
+
+        {/* ===== Payment Details Dialog (for online payment orders) ===== */}
+        <Dialog open={paymentDetailsOpen} onOpenChange={setPaymentDetailsOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                Payment Verification
+              </DialogTitle>
+            </DialogHeader>
+            {selectedOrder && (
+              <div className="space-y-4 py-2">
+                <div className="rounded-lg bg-muted/50 p-3 space-y-1">
+                  <p className="text-xs text-muted-foreground">Order</p>
+                  <p className="text-sm font-semibold font-mono">#{selectedOrder.id.slice(-6)}</p>
+                  <p className="text-xs text-muted-foreground">by {selectedOrder.userName}</p>
+                </div>
+                {selectedOrder.fullName && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Full Name</p>
+                    <p className="text-sm font-medium">{selectedOrder.fullName}</p>
+                  </div>
+                )}
+                {selectedOrder.transactionNumber && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Transaction Number</p>
+                    <p className="text-sm font-medium font-mono">{selectedOrder.transactionNumber}</p>
+                  </div>
+                )}
+                {selectedOrder.paymentSlip && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Payment Slip</p>
+                    <img
+                      src={selectedOrder.paymentSlip}
+                      alt="Payment slip"
+                      className="w-full max-h-64 object-contain rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => {
+                        setPaymentSlipUrl(selectedOrder.paymentSlip!);
+                        setPaymentSlipViewerOpen(true);
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Click image to view full size</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ===== Payment Slip Full-Size Viewer ===== */}
+        <Dialog open={paymentSlipViewerOpen} onOpenChange={setPaymentSlipViewerOpen}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Payment Slip</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center">
+              {paymentSlipUrl && (
+                <img
+                  src={paymentSlipUrl}
+                  alt="Payment slip full size"
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* ===== Unsaved Changes AlertDialog ===== */}
+        <AlertDialog open={unsavedDialogOpen} onOpenChange={setUnsavedDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                Unsaved Changes
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved changes. Do you want to save your changes or discard them?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel onClick={handleUnsavedDiscard} className="rounded-full">
+                <X className="w-4 h-4 mr-1.5" />
+                Discard Changes
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleUnsavedSave} className="rounded-full">
+                <Save className="w-4 h-4 mr-1.5" />
+                Save Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </section>
     </div>
   );

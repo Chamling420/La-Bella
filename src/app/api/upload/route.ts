@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -32,19 +30,15 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Generate unique filename
     const ext = path.extname(file.name) || '.jpg';
     const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
 
-    // Ensure uploads directory exists
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
     await mkdir(uploadsDir, { recursive: true });
 
-    // Write file
     const filePath = path.join(uploadsDir, uniqueName);
     await writeFile(filePath, buffer);
 
-    // Return the public URL
     const imageUrl = `/uploads/${uniqueName}`;
 
     return NextResponse.json({ url: imageUrl, name: file.name });

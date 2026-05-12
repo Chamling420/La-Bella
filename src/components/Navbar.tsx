@@ -32,6 +32,8 @@ import {
   Shield,
   Crown,
   UserCircle,
+  MessageSquare,
+  Package,
 } from "lucide-react";
 
 const NAV_ITEMS: { label: string; page: Page; icon: React.ReactNode; roles?: string[]; homeKey?: boolean }[] = [
@@ -52,10 +54,15 @@ export function Navbar() {
   const logout = useAppStore((s) => s.logout);
   const cart = useAppStore((s) => s.cart);
   const homeButtonText = useAppStore((s) => s.homeButtonText);
+  const messages = useAppStore((s) => s.messages);
+  const orders = useAppStore((s) => s.orders);
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const unreadMsgCount = messages.filter((m) => !m.read).length;
+  const pendingOrderCount = orders.filter((o) => o.status === "pending").length;
+  const isAdmin = currentUser && (currentUser.role === "admin" || currentUser.role === "superadmin");
   const visibleNavItems = NAV_ITEMS.filter(
     (item) => !item.roles || (currentUser && item.roles.includes(currentUser.role))
   );
@@ -108,6 +115,42 @@ export function Navbar() {
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
+
+          {/* Messages (Admin/SuperAdmin only) */}
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleNav("admin")}
+              className="h-9 w-9 relative"
+              aria-label="Messages"
+            >
+              <MessageSquare className="h-4 w-4" />
+              {unreadMsgCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-red-500 text-white">
+                  {unreadMsgCount}
+                </Badge>
+              )}
+            </Button>
+          )}
+
+          {/* Orders (Admin/SuperAdmin only) */}
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleNav("admin")}
+              className="h-9 w-9 relative"
+              aria-label="Orders"
+            >
+              <Package className="h-4 w-4" />
+              {pendingOrderCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-amber-500 text-white">
+                  {pendingOrderCount}
+                </Badge>
+              )}
+            </Button>
+          )}
 
           {/* Cart */}
           <Button

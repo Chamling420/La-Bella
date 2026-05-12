@@ -1,7 +1,7 @@
 'use client';
 
-import { useAppStore, type UserRole, type User, type Service, type Product, type Appointment, type HomePageContent } from '@/lib/store';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAppStore, type UserRole, type User, type Service, type Product, type Appointment, type HomePageContent, type Order, type PaymentMethod, type PaymentMethodType } from '@/lib/store';
 import { toast } from 'sonner';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,6 +37,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -47,6 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 
 import {
   Crown,
@@ -65,6 +67,20 @@ import {
   Settings,
   Sparkles,
   MapPin,
+  MessageSquare,
+  Package,
+  Send,
+  Mail,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  CreditCard,
+  Save,
+  X,
+  Truck,
+  Building2,
+  Smartphone,
+  Wallet,
 } from 'lucide-react';
 import ImageUpload from '@/components/ui/image-upload';
 
@@ -93,38 +109,149 @@ function getRoleIcon(role: UserRole) {
 }
 
 function formatDate(dateStr: string) {
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  try {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatDateTime(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function getPaymentMethodLabel(method: string): string {
+  switch (method) {
+    case 'cash_on_delivery': return 'Cash on Delivery';
+    case 'bank': return 'Bank Transfer';
+    case 'esewa': return 'eSewa';
+    case 'khalti': return 'Khalti';
+    case 'imepay': return 'IME Pay';
+    default: return method;
+  }
+}
+
+function getOrderStatusBadge(status: string): string {
+  switch (status) {
+    case 'pending':
+      return 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100';
+    case 'confirmed':
+      return 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
+    case 'cancelled':
+      return 'bg-red-100 text-red-600 border-red-200 hover:bg-red-100 line-through';
+    default:
+      return 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100';
+  }
+}
+
+function getPaymentMethodIcon(type: PaymentMethodType) {
+  switch (type) {
+    case 'bank':
+      return <Building2 className="h-5 w-5" />;
+    case 'esewa':
+      return <Smartphone className="h-5 w-5" />;
+    case 'khalti':
+      return <Wallet className="h-5 w-5" />;
+    case 'imepay':
+      return <Smartphone className="h-5 w-5" />;
+  }
+}
+
+function getPaymentMethodTypeName(type: PaymentMethodType): string {
+  switch (type) {
+    case 'bank': return 'Bank Transfer';
+    case 'esewa': return 'eSewa';
+    case 'khalti': return 'Khalti';
+    case 'imepay': return 'IME Pay';
+  }
 }
 
 // ==================== MAIN COMPONENT ====================
 
 export default function SuperAdminPanel() {
-  const {
-    currentUser,
-    users,
-    services,
-    products,
-    appointments,
-    changeUserRole,
-    deleteUser,
-    addService,
-    updateService,
-    deleteService,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    confirmAppointment,
-    cancelAppointment,
-    homeButtonText,
-    setHomeButtonText,
-    homePageContent,
-    setHomePageContent,
-  } = useAppStore();
+  // ===== Store selectors =====
+  const currentUser = useAppStore(s => s.currentUser);
+  const users = useAppStore(s => s.users);
+  const changeUserRole = useAppStore(s => s.changeUserRole);
+  const deleteUser = useAppStore(s => s.deleteUser);
+  const services = useAppStore(s => s.services);
+  const addService = useAppStore(s => s.addService);
+  const updateService = useAppStore(s => s.updateService);
+  const deleteService = useAppStore(s => s.deleteService);
+  const products = useAppStore(s => s.products);
+  const addProduct = useAppStore(s => s.addProduct);
+  const updateProduct = useAppStore(s => s.updateProduct);
+  const deleteProduct = useAppStore(s => s.deleteProduct);
+  const appointments = useAppStore(s => s.appointments);
+  const confirmAppointment = useAppStore(s => s.confirmAppointment);
+  const cancelAppointment = useAppStore(s => s.cancelAppointment);
+  const homeButtonText = useAppStore(s => s.homeButtonText);
+  const setHomeButtonText = useAppStore(s => s.setHomeButtonText);
+  const homePageContent = useAppStore(s => s.homePageContent);
+  const setHomePageContent = useAppStore(s => s.setHomePageContent);
+  const messages = useAppStore(s => s.messages);
+  const replyToMessage = useAppStore(s => s.replyToMessage);
+  const markMessageRead = useAppStore(s => s.markMessageRead);
+  const deleteMessage = useAppStore(s => s.deleteMessage);
+  const orders = useAppStore(s => s.orders);
+  const confirmOrder = useAppStore(s => s.confirmOrder);
+  const cancelOrder = useAppStore(s => s.cancelOrder);
+  const paymentMethods = useAppStore(s => s.paymentMethods);
+  const addPaymentMethod = useAppStore(s => s.addPaymentMethod);
+  const updatePaymentMethod = useAppStore(s => s.updatePaymentMethod);
+  const deletePaymentMethod = useAppStore(s => s.deletePaymentMethod);
+
+  // ===== State =====
+  const [activeTab, setActiveTab] = useState('users');
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
+  const [replyTexts, setReplyTexts] = useState<Record<string, string>>({});
+  const [paymentSlipViewerOpen, setPaymentSlipViewerOpen] = useState(false);
+  const [paymentSlipUrl, setPaymentSlipUrl] = useState('');
+  const [paymentDetailsOpen, setPaymentDetailsOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // ===== Unsaved changes state =====
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
+
+  // ===== Computed values =====
+  const unreadCount = messages.filter(m => !m.read).length;
+  const pendingOrderCount = orders.filter(o => o.status === 'pending').length;
+  const hasUnsavedChanges =
+    serviceDialogOpen ||
+    productDialogOpen ||
+    Object.values(replyTexts).some(t => t.trim() !== '');
+
+  // ===== BeforeUnload for browser close/refresh =====
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
 
   // ---- Access Control ----
   if (!currentUser || currentUser.role !== 'superadmin') {
@@ -147,6 +274,77 @@ export default function SuperAdminPanel() {
     );
   }
 
+  // ===== Message Handlers =====
+  const handleExpandMessage = (messageId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message && !message.read) {
+      markMessageRead(messageId);
+    }
+    setExpandedMessageId(prev => prev === messageId ? null : messageId);
+  };
+
+  const handleReplySubmit = (messageId: string) => {
+    const text = replyTexts[messageId]?.trim();
+    if (!text) return;
+    replyToMessage(messageId, text);
+    setReplyTexts(prev => {
+      const next = { ...prev };
+      delete next[messageId];
+      return next;
+    });
+    toast.success('Reply sent');
+  };
+
+  // ===== Tab Change Handler (with unsaved changes check) =====
+  const handleTabChange = (newTab: string) => {
+    if (hasUnsavedChanges) {
+      setPendingTab(newTab);
+      setUnsavedDialogOpen(true);
+    } else {
+      setActiveTab(newTab);
+    }
+  };
+
+  const handleUnsavedSave = () => {
+    // Send pending replies
+    Object.entries(replyTexts).forEach(([msgId, text]) => {
+      if (text.trim()) {
+        replyToMessage(msgId, text.trim());
+        toast.success('Reply sent');
+      }
+    });
+    setReplyTexts({});
+
+    // Close dialogs
+    if (serviceDialogOpen) {
+      setServiceDialogOpen(false);
+      setEditingServiceId(null);
+    }
+    if (productDialogOpen) {
+      setProductDialogOpen(false);
+      setEditingProductId(null);
+    }
+
+    // Proceed to new tab
+    setUnsavedDialogOpen(false);
+    if (pendingTab) setActiveTab(pendingTab);
+    setPendingTab(null);
+  };
+
+  const handleUnsavedDiscard = () => {
+    // Close dialogs without saving
+    setServiceDialogOpen(false);
+    setEditingServiceId(null);
+    setProductDialogOpen(false);
+    setEditingProductId(null);
+    // Clear reply texts
+    setReplyTexts({});
+    // Proceed to new tab
+    setUnsavedDialogOpen(false);
+    if (pendingTab) setActiveTab(pendingTab);
+    setPendingTab(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -162,14 +360,14 @@ export default function SuperAdminPanel() {
               Super Admin Panel
             </h1>
             <p className="text-white/80">
-              Full control over users, services, products &amp; appointments
+              Full control over users, services, products, orders &amp; payments
             </p>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="users" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="w-full flex-wrap sm:w-auto sm:flex-nowrap">
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
@@ -190,6 +388,31 @@ export default function SuperAdminPanel() {
             <CalendarDays className="h-4 w-4" />
             <span className="hidden sm:inline">All Appointments</span>
             <span className="sm:hidden">Appts</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">Messages</span>
+            <span className="sm:hidden">Msgs</span>
+            {unreadCount > 0 && (
+              <Badge className="ml-0.5 h-5 min-w-5 px-1.5 text-[10px] bg-destructive text-destructive-foreground rounded-full">
+                {unreadCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="orders" className="gap-2">
+            <Package className="h-4 w-4" />
+            <span className="hidden sm:inline">Orders</span>
+            <span className="sm:hidden">Orders</span>
+            {pendingOrderCount > 0 && (
+              <Badge className="ml-0.5 h-5 min-w-5 px-1.5 text-[10px] bg-amber-500 text-white rounded-full">
+                {pendingOrderCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="payment-methods" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span className="hidden sm:inline">Payment Methods</span>
+            <span className="sm:hidden">Payments</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2">
             <Settings className="h-4 w-4" />
@@ -215,6 +438,10 @@ export default function SuperAdminPanel() {
             addService={addService}
             updateService={updateService}
             deleteService={deleteService}
+            dialogOpen={serviceDialogOpen}
+            setDialogOpen={setServiceDialogOpen}
+            editingServiceId={editingServiceId}
+            setEditingServiceId={setEditingServiceId}
           />
         </TabsContent>
 
@@ -225,6 +452,10 @@ export default function SuperAdminPanel() {
             addProduct={addProduct}
             updateProduct={updateProduct}
             deleteProduct={deleteProduct}
+            dialogOpen={productDialogOpen}
+            setDialogOpen={setProductDialogOpen}
+            editingProductId={editingProductId}
+            setEditingProductId={setEditingProductId}
           />
         </TabsContent>
 
@@ -237,7 +468,47 @@ export default function SuperAdminPanel() {
           />
         </TabsContent>
 
-        {/* ===== TAB 5: SETTINGS ===== */}
+        {/* ===== TAB 5: MESSAGES ===== */}
+        <TabsContent value="messages">
+          <MessagesTab
+            messages={messages}
+            expandedMessageId={expandedMessageId}
+            onExpandMessage={handleExpandMessage}
+            replyTexts={replyTexts}
+            setReplyTexts={setReplyTexts}
+            onReplySubmit={handleReplySubmit}
+            deleteMessage={deleteMessage}
+          />
+        </TabsContent>
+
+        {/* ===== TAB 6: ORDERS ===== */}
+        <TabsContent value="orders">
+          <OrdersTab
+            orders={orders}
+            confirmOrder={confirmOrder}
+            cancelOrder={cancelOrder}
+            paymentDetailsOpen={paymentDetailsOpen}
+            setPaymentDetailsOpen={setPaymentDetailsOpen}
+            selectedOrder={selectedOrder}
+            setSelectedOrder={setSelectedOrder}
+            paymentSlipViewerOpen={paymentSlipViewerOpen}
+            setPaymentSlipViewerOpen={setPaymentSlipViewerOpen}
+            paymentSlipUrl={paymentSlipUrl}
+            setPaymentSlipUrl={setPaymentSlipUrl}
+          />
+        </TabsContent>
+
+        {/* ===== TAB 7: PAYMENT METHODS ===== */}
+        <TabsContent value="payment-methods">
+          <PaymentMethodsTab
+            paymentMethods={paymentMethods}
+            addPaymentMethod={addPaymentMethod}
+            updatePaymentMethod={updatePaymentMethod}
+            deletePaymentMethod={deletePaymentMethod}
+          />
+        </TabsContent>
+
+        {/* ===== TAB 8: SETTINGS ===== */}
         <TabsContent value="settings">
           <SettingsTab
             homeButtonText={homeButtonText}
@@ -247,6 +518,31 @@ export default function SuperAdminPanel() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* ===== Unsaved Changes AlertDialog ===== */}
+      <AlertDialog open={unsavedDialogOpen} onOpenChange={setUnsavedDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Unsaved Changes
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Would you like to save them before leaving this tab?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleUnsavedDiscard} className="gap-2 rounded-full">
+              <X className="h-4 w-4" />
+              Discard Changes
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleUnsavedSave} className="gap-2 rounded-full">
+              <Save className="h-4 w-4" />
+              Save Changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -433,14 +729,20 @@ function ManageServicesTab({
   addService,
   updateService,
   deleteService,
+  dialogOpen,
+  setDialogOpen,
+  editingServiceId,
+  setEditingServiceId,
 }: {
   services: Service[];
   addService: (service: Omit<Service, 'id'>) => void;
   updateService: (id: string, service: Partial<Service>) => void;
   deleteService: (id: string) => void;
+  dialogOpen: boolean;
+  setDialogOpen: (open: boolean) => void;
+  editingServiceId: string | null;
+  setEditingServiceId: (id: string | null) => void;
 }) {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingService, setEditingService] = useState<(typeof services)[0] | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [name, setName] = useState('');
@@ -453,7 +755,7 @@ function ManageServicesTab({
     setPrice('');
     setDuration('');
     setIcon('scissors');
-    setEditingService(null);
+    setEditingServiceId(null);
   };
 
   const openAdd = () => {
@@ -461,8 +763,8 @@ function ManageServicesTab({
     setDialogOpen(true);
   };
 
-  const openEdit = (service: (typeof services)[0]) => {
-    setEditingService(service);
+  const openEdit = (service: Service) => {
+    setEditingServiceId(service.id);
     setName(service.name);
     setPrice(String(service.price));
     setDuration(service.duration);
@@ -481,8 +783,8 @@ function ManageServicesTab({
       return;
     }
 
-    if (editingService) {
-      updateService(editingService.id, {
+    if (editingServiceId) {
+      updateService(editingServiceId, {
         name: name.trim(),
         price: priceNum,
         duration: duration.trim(),
@@ -602,7 +904,7 @@ function ManageServicesTab({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Scissors className="h-5 w-5 text-rose-500" />
-              {editingService ? 'Edit Service' : 'Add Service'}
+              {editingServiceId ? 'Edit Service' : 'Add Service'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -655,13 +957,13 @@ function ManageServicesTab({
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setDialogOpen(false)}
+              onClick={() => { setDialogOpen(false); resetForm(); }}
               className="rounded-full"
             >
               Cancel
             </Button>
             <Button onClick={handleSave} className="rounded-full">
-              {editingService ? 'Save Changes' : 'Add Service'}
+              {editingServiceId ? 'Save Changes' : 'Add Service'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -707,14 +1009,20 @@ function ManageProductsTab({
   addProduct,
   updateProduct,
   deleteProduct,
+  dialogOpen,
+  setDialogOpen,
+  editingProductId,
+  setEditingProductId,
 }: {
   products: Product[];
   addProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
+  dialogOpen: boolean;
+  setDialogOpen: (open: boolean) => void;
+  editingProductId: string | null;
+  setEditingProductId: (id: string | null) => void;
 }) {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<(typeof products)[0] | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [name, setName] = useState('');
@@ -727,7 +1035,7 @@ function ManageProductsTab({
     setPrice('');
     setCategory('Hair');
     setImage('');
-    setEditingProduct(null);
+    setEditingProductId(null);
   };
 
   const openAdd = () => {
@@ -735,8 +1043,8 @@ function ManageProductsTab({
     setDialogOpen(true);
   };
 
-  const openEdit = (product: (typeof products)[0]) => {
-    setEditingProduct(product);
+  const openEdit = (product: Product) => {
+    setEditingProductId(product.id);
     setName(product.name);
     setPrice(String(product.price));
     setCategory(product.category);
@@ -755,8 +1063,8 @@ function ManageProductsTab({
       return;
     }
 
-    if (editingProduct) {
-      updateProduct(editingProduct.id, {
+    if (editingProductId) {
+      updateProduct(editingProductId, {
         name: name.trim(),
         price: priceNum,
         category,
@@ -876,11 +1184,11 @@ function ManageProductsTab({
 
       {/* Add/Edit Product Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-rose-500" />
-              {editingProduct ? 'Edit Product' : 'Add Product'}
+              {editingProductId ? 'Edit Product' : 'Add Product'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -929,13 +1237,13 @@ function ManageProductsTab({
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setDialogOpen(false)}
+              onClick={() => { setDialogOpen(false); resetForm(); }}
               className="rounded-full"
             >
               Cancel
             </Button>
             <Button onClick={handleSave} className="rounded-full">
-              {editingProduct ? 'Save Changes' : 'Add Product'}
+              {editingProductId ? 'Save Changes' : 'Add Product'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1190,22 +1498,20 @@ function AllAppointmentsTab({
       <AlertDialog
         open={!!confirmId}
         onOpenChange={(open) => {
-          if (!open) setConfirmId(null);
+          if (!open) {
+            setConfirmId(null);
+            setActionInfo({ serviceName: '', date: '', userName: '' });
+          }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-emerald-600">
-              <CheckCircle2 className="h-5 w-5" />
-              Confirm Appointment
-            </AlertDialogTitle>
+            <AlertDialogTitle>Confirm Appointment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to confirm the{' '}
+              Confirm appointment for{' '}
               <strong className="text-foreground">{actionInfo.serviceName}</strong>{' '}
-              appointment for{' '}
-              <strong className="text-foreground">{actionInfo.userName}</strong>{' '}
-              on{' '}
-              <strong className="text-foreground">{formatDate(actionInfo.date)}</strong>?
+              on <strong className="text-foreground">{actionInfo.date}</strong>{' '}
+              for {actionInfo.userName}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1214,7 +1520,7 @@ function AllAppointmentsTab({
               onClick={handleConfirmConfirm}
               className="bg-emerald-600 text-white hover:bg-emerald-700"
             >
-              Yes, Confirm
+              Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1224,32 +1530,32 @@ function AllAppointmentsTab({
       <AlertDialog
         open={!!cancelId}
         onOpenChange={(open) => {
-          if (!open) setCancelId(null);
+          if (!open) {
+            setCancelId(null);
+            setActionInfo({ serviceName: '', date: '', userName: '' });
+          }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <XCircle className="h-5 w-5" />
+              <AlertTriangle className="h-5 w-5" />
               Cancel Appointment
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel the{' '}
+              Cancel appointment for{' '}
               <strong className="text-foreground">{actionInfo.serviceName}</strong>{' '}
-              appointment for{' '}
-              <strong className="text-foreground">{actionInfo.userName}</strong>{' '}
-              on{' '}
-              <strong className="text-foreground">{formatDate(actionInfo.date)}</strong>?
-              This action cannot be undone.
+              on <strong className="text-foreground">{actionInfo.date}</strong>{' '}
+              for {actionInfo.userName}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogCancel>Keep</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Yes, Cancel
+              Cancel Appointment
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1258,7 +1564,1030 @@ function AllAppointmentsTab({
   );
 }
 
-// ==================== TAB 5: SETTINGS ====================
+// ==================== TAB 5: MESSAGES ====================
+
+function MessagesTab({
+  messages,
+  expandedMessageId,
+  onExpandMessage,
+  replyTexts,
+  setReplyTexts,
+  onReplySubmit,
+  deleteMessage,
+}: {
+  messages: ReturnType<typeof useAppStore>['messages'];
+  expandedMessageId: string | null;
+  onExpandMessage: (id: string) => void;
+  replyTexts: Record<string, string>;
+  setReplyTexts: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  onReplySubmit: (messageId: string) => void;
+  deleteMessage: (id: string) => void;
+}) {
+  const [deleteMessageId, setDeleteMessageId] = useState<string | null>(null);
+  const [deleteMessageName, setDeleteMessageName] = useState('');
+
+  const handleDeleteConfirm = () => {
+    if (deleteMessageId) {
+      deleteMessage(deleteMessageId);
+      toast.success('Message deleted');
+      setDeleteMessageId(null);
+      setDeleteMessageName('');
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-rose-500" />
+            Messages
+            <Badge variant="secondary" className="ml-2">
+              {messages.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <Mail className="h-12 w-12 text-muted-foreground/30" />
+              <h3 className="text-lg font-semibold">No Messages</h3>
+              <p className="text-muted-foreground">No messages from users yet.</p>
+            </div>
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto space-y-3 pr-1">
+              {[...messages]
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                .map((message) => {
+                  const isExpanded = expandedMessageId === message.id;
+                  return (
+                    <Card
+                      key={message.id}
+                      className={`transition-all ${!message.read ? 'border-primary/30 bg-primary/5' : ''} ${isExpanded ? 'ring-1 ring-primary/20' : ''}`}
+                    >
+                      <CardContent className="p-4">
+                        {/* Message header - clickable to expand */}
+                        <div
+                          className="flex items-start gap-3 cursor-pointer"
+                          onClick={() => onExpandMessage(message.id)}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
+                            {message.userName
+                              .split(' ')
+                              .map(n => n[0])
+                              .join('')
+                              .toUpperCase()
+                              .slice(0, 2)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className={`font-semibold text-sm ${!message.read ? 'text-primary' : ''}`}>
+                                {message.userName}
+                              </h3>
+                              {!message.read && (
+                                <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                              )}
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{message.userEmail}</p>
+                            {!isExpanded && (
+                              <p className="text-sm text-muted-foreground mt-1 truncate">{message.text}</p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="text-xs text-muted-foreground">
+                              {formatDateTime(message.timestamp)}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 hover:text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteMessageId(message.id);
+                                setDeleteMessageName(message.userName);
+                              }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Expanded content */}
+                        {isExpanded && (
+                          <div className="mt-3 space-y-3">
+                            {/* Full message */}
+                            <div className="bg-muted/50 rounded-lg p-3">
+                              <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                            </div>
+
+                            {/* Replies */}
+                            {message.replies.length > 0 && (
+                              <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                                {message.replies.map((reply) => (
+                                  <div key={reply.id} className="bg-primary/5 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs font-semibold text-primary">{reply.adminName}</span>
+                                      <span className="text-xs text-muted-foreground">{formatDateTime(reply.timestamp)}</span>
+                                    </div>
+                                    <p className="text-sm whitespace-pre-wrap">{reply.text}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Reply input */}
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Type your reply..."
+                                value={replyTexts[message.id] || ''}
+                                onChange={(e) => setReplyTexts(prev => ({ ...prev, [message.id]: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && replyTexts[message.id]?.trim()) {
+                                    e.preventDefault();
+                                    onReplySubmit(message.id);
+                                  }
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => onReplySubmit(message.id)}
+                                disabled={!replyTexts[message.id]?.trim()}
+                                className="rounded-full"
+                              >
+                                <Send className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Message AlertDialog */}
+      <AlertDialog
+        open={!!deleteMessageId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteMessageId(null);
+            setDeleteMessageName('');
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Message
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this message from{' '}
+              <strong className="text-foreground">{deleteMessageName}</strong>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+// ==================== TAB 6: ORDERS ====================
+
+function OrdersTab({
+  orders,
+  confirmOrder,
+  cancelOrder,
+  paymentDetailsOpen,
+  setPaymentDetailsOpen,
+  selectedOrder,
+  setSelectedOrder,
+  paymentSlipViewerOpen,
+  setPaymentSlipViewerOpen,
+  paymentSlipUrl,
+  setPaymentSlipUrl,
+}: {
+  orders: Order[];
+  confirmOrder: (id: string) => void;
+  cancelOrder: (id: string) => void;
+  paymentDetailsOpen: boolean;
+  setPaymentDetailsOpen: (open: boolean) => void;
+  selectedOrder: Order | null;
+  setSelectedOrder: (order: Order | null) => void;
+  paymentSlipViewerOpen: boolean;
+  setPaymentSlipViewerOpen: (open: boolean) => void;
+  paymentSlipUrl: string;
+  setPaymentSlipUrl: (url: string) => void;
+}) {
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-rose-500" />
+            Orders
+            <Badge variant="secondary" className="ml-2">
+              {orders.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {orders.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <Package className="h-12 w-12 text-muted-foreground/30" />
+              <h3 className="text-lg font-semibold">No Orders</h3>
+              <p className="text-muted-foreground">No orders have been placed yet.</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Items</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...orders]
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((order) => (
+                        <TableRow key={order.id} className={order.status === 'cancelled' ? 'opacity-60' : ''}>
+                          <TableCell className="font-mono text-xs">#{order.id.slice(-6)}</TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-sm">{order.userName}</p>
+                              <p className="text-xs text-muted-foreground">{order.userEmail}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-48">
+                              {order.items.map((item, idx) => (
+                                <div key={idx} className="text-xs">
+                                  {item.productName} &times; {item.quantity}
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold">NPR {order.total}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {order.paymentMethod === 'cash_on_delivery' ? (
+                                <Truck className="w-3 h-3 mr-1" />
+                              ) : (
+                                <CreditCard className="w-3 h-3 mr-1" />
+                              )}
+                              {getPaymentMethodLabel(order.paymentMethod)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={getOrderStatusBadge(order.status)}>
+                              {order.status === 'pending' ? (
+                                <Clock className="w-3 h-3 mr-1" />
+                              ) : order.status === 'confirmed' ? (
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                              ) : (
+                                <XCircle className="w-3 h-3 mr-1" />
+                              )}
+                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {formatDateTime(order.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {order.paymentMethod !== 'cash_on_delivery' && (order.fullName || order.transactionNumber || order.paymentSlip) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 hover:text-primary"
+                                  onClick={() => {
+                                    setSelectedOrder(order);
+                                    setPaymentDetailsOpen(true);
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {order.status === 'pending' && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 rounded-full text-xs h-7"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                      Confirm
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirm Order</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to confirm order{' '}
+                                        <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => {
+                                          confirmOrder(order.id);
+                                          toast.success('Order confirmed');
+                                        }}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                                      >
+                                        Yes, Confirm
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                              {(order.status === 'pending' || order.status === 'confirmed') && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 rounded-full text-xs h-7"
+                                    >
+                                      <XCircle className="w-3.5 h-3.5 mr-1" />
+                                      Cancel
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to cancel order{' '}
+                                        <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                        This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel className="rounded-full">Keep Order</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => {
+                                          cancelOrder(order.id);
+                                          toast.success('Order cancelled');
+                                        }}
+                                        className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                      >
+                                        Yes, Cancel
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                              {order.status === 'cancelled' && (
+                                <span className="text-xs text-muted-foreground">&mdash;</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden grid gap-3">
+                {[...orders]
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .map((order) => (
+                    <Card key={order.id} className={`transition-shadow hover:shadow-lg ${order.status === 'cancelled' ? 'opacity-70' : ''}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-mono text-xs text-muted-foreground">#{order.id.slice(-6)}</span>
+                          <Badge variant="outline" className={getOrderStatusBadge(order.status)}>
+                            {order.status === 'pending' ? (
+                              <Clock className="w-3 h-3 mr-1" />
+                            ) : order.status === 'confirmed' ? (
+                              <CheckCircle2 className="w-3 h-3 mr-1" />
+                            ) : (
+                              <XCircle className="w-3 h-3 mr-1" />
+                            )}
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </Badge>
+                        </div>
+                        <p className="font-semibold text-sm">{order.userName}</p>
+                        <p className="text-xs text-muted-foreground">{order.userEmail}</p>
+                        <div className="mt-2 space-y-0.5">
+                          {order.items.map((item, idx) => (
+                            <p key={idx} className="text-xs text-muted-foreground">
+                              {item.productName} &times; {item.quantity} &mdash; NPR {item.price * item.quantity}
+                            </p>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                          <span className="font-semibold text-sm">NPR {order.total}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {order.paymentMethod === 'cash_on_delivery' ? (
+                              <Truck className="w-3 h-3 mr-1" />
+                            ) : (
+                              <CreditCard className="w-3 h-3 mr-1" />
+                            )}
+                            {getPaymentMethodLabel(order.paymentMethod)}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{formatDateTime(order.createdAt)}</p>
+
+                        {/* Payment verification details for online payments */}
+                        {order.paymentMethod !== 'cash_on_delivery' && (order.fullName || order.transactionNumber || order.paymentSlip) && (
+                          <div className="mt-2 p-2 bg-muted/50 rounded-lg text-xs space-y-1">
+                            <p className="font-medium text-primary mb-1">Payment Verification</p>
+                            {order.fullName && <p><span className="font-medium">Name:</span> {order.fullName}</p>}
+                            {order.transactionNumber && <p><span className="font-medium">Transaction #:</span> {order.transactionNumber}</p>}
+                            {order.paymentSlip && (
+                              <div>
+                                <p className="font-medium mb-1">Payment Slip:</p>
+                                <img
+                                  src={order.paymentSlip}
+                                  alt="Payment slip"
+                                  className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => {
+                                    setPaymentSlipUrl(order.paymentSlip!);
+                                    setPaymentSlipViewerOpen(true);
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 mt-3">
+                          {order.status === 'pending' && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 rounded-full text-xs h-7 flex-1"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Confirm
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirm Order</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to confirm order{' '}
+                                    <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => {
+                                      confirmOrder(order.id);
+                                      toast.success('Order confirmed');
+                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
+                                  >
+                                    Yes, Confirm
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                          {(order.status === 'pending' || order.status === 'confirmed') && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600 border-red-200 hover:bg-red-50 rounded-full text-xs h-7 flex-1"
+                                >
+                                  <XCircle className="w-3.5 h-3.5 mr-1" /> Cancel
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Cancel Order</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to cancel order{' '}
+                                    <span className="font-semibold text-foreground">#{order.id.slice(-6)}</span>?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="rounded-full">Keep Order</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => {
+                                      cancelOrder(order.id);
+                                      toast.success('Order cancelled');
+                                    }}
+                                    className="bg-red-600 hover:bg-red-700 text-white rounded-full"
+                                  >
+                                    Yes, Cancel
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Payment Details Dialog */}
+      <Dialog open={paymentDetailsOpen} onOpenChange={setPaymentDetailsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-rose-500" />
+              Payment Verification Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4 py-2">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Order</span>
+                  <span className="font-mono text-sm">#{selectedOrder.id.slice(-6)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Payment Method</span>
+                  <Badge variant="outline" className="text-xs">
+                    {getPaymentMethodLabel(selectedOrder.paymentMethod)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Total</span>
+                  <span className="font-semibold">NPR {selectedOrder.total}</span>
+                </div>
+              </div>
+              {selectedOrder.fullName && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Full Name</Label>
+                  <p className="text-sm font-medium">{selectedOrder.fullName}</p>
+                </div>
+              )}
+              {selectedOrder.transactionNumber && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Transaction Number</Label>
+                  <p className="text-sm font-medium font-mono">{selectedOrder.transactionNumber}</p>
+                </div>
+              )}
+              {selectedOrder.paymentSlip && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Payment Slip / Screenshot</Label>
+                  <div className="relative group">
+                    <img
+                      src={selectedOrder.paymentSlip}
+                      alt="Payment slip"
+                      className="w-full max-h-64 object-contain rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => {
+                        setPaymentSlipUrl(selectedOrder.paymentSlip!);
+                        setPaymentSlipViewerOpen(true);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Slip Viewer Dialog */}
+      <Dialog open={paymentSlipViewerOpen} onOpenChange={setPaymentSlipViewerOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Payment Slip</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {paymentSlipUrl && (
+              <img
+                src={paymentSlipUrl}
+                alt="Payment slip full view"
+                className="w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ==================== TAB 7: PAYMENT METHODS (SUPER ADMIN ONLY) ====================
+
+function PaymentMethodsTab({
+  paymentMethods,
+  addPaymentMethod,
+  updatePaymentMethod,
+  deletePaymentMethod,
+}: {
+  paymentMethods: PaymentMethod[];
+  addPaymentMethod: (pm: Omit<PaymentMethod, 'id'>) => void;
+  updatePaymentMethod: (id: string, pm: Partial<PaymentMethod>) => void;
+  deletePaymentMethod: (id: string) => void;
+}) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Form state
+  const [type, setType] = useState<PaymentMethodType>('bank');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [branchName, setBranchName] = useState('');
+  const [walletName, setWalletName] = useState('');
+  const [walletNumber, setWalletNumber] = useState('');
+  const [qrImage, setQrImage] = useState('');
+  const [active, setActive] = useState(true);
+
+  const resetForm = () => {
+    setType('bank');
+    setAccountHolderName('');
+    setAccountNumber('');
+    setBranchName('');
+    setWalletName('');
+    setWalletNumber('');
+    setQrImage('');
+    setActive(true);
+    setEditingId(null);
+  };
+
+  const openAdd = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEdit = (pm: PaymentMethod) => {
+    setEditingId(pm.id);
+    setType(pm.type);
+    setAccountHolderName(pm.accountHolderName || '');
+    setAccountNumber(pm.accountNumber || '');
+    setBranchName(pm.branchName || '');
+    setWalletName(pm.walletName || '');
+    setWalletNumber(pm.walletNumber || '');
+    setQrImage(pm.qrImage || '');
+    setActive(pm.active);
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (type === 'bank') {
+      if (!accountHolderName.trim() || !accountNumber.trim()) {
+        toast.error('Please fill in Account Holder Name and Account Number');
+        return;
+      }
+    } else {
+      if (!walletName.trim() || !walletNumber.trim()) {
+        toast.error('Please fill in Wallet Name and Wallet Number');
+        return;
+      }
+    }
+
+    const pmData = type === 'bank'
+      ? {
+          type,
+          accountHolderName: accountHolderName.trim(),
+          accountNumber: accountNumber.trim(),
+          branchName: branchName.trim() || undefined,
+          walletName: undefined,
+          walletNumber: undefined,
+          qrImage: qrImage.trim() || undefined,
+          active,
+        }
+      : {
+          type,
+          accountHolderName: undefined,
+          accountNumber: undefined,
+          branchName: undefined,
+          walletName: walletName.trim(),
+          walletNumber: walletNumber.trim(),
+          qrImage: qrImage.trim() || undefined,
+          active,
+        };
+
+    if (editingId) {
+      updatePaymentMethod(editingId, pmData);
+      toast.success('Payment method updated');
+    } else {
+      addPaymentMethod(pmData as Omit<PaymentMethod, 'id'>);
+      toast.success('Payment method added');
+    }
+
+    setDialogOpen(false);
+    resetForm();
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteId) {
+      deletePaymentMethod(deleteId);
+      toast.success('Payment method deleted');
+      setDeleteId(null);
+    }
+  };
+
+  const handleToggleActive = (pm: PaymentMethod) => {
+    updatePaymentMethod(pm.id, { active: !pm.active });
+    toast.success(pm.active ? 'Payment method deactivated' : 'Payment method activated');
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-rose-500" />
+              Payment Methods
+              <Badge variant="secondary" className="ml-2">
+                {paymentMethods.length}
+              </Badge>
+            </CardTitle>
+            <Button onClick={openAdd} className="gap-2 rounded-full">
+              <Plus className="h-4 w-4" />
+              Add Payment Method
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {paymentMethods.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <CreditCard className="h-12 w-12 text-muted-foreground/30" />
+              <h3 className="text-lg font-semibold">No Payment Methods</h3>
+              <p className="text-muted-foreground">Add payment methods for online payments.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {paymentMethods.map((pm) => (
+                <Card key={pm.id} className={`transition-all ${!pm.active ? 'opacity-60' : 'ring-1 ring-primary/10'}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          {getPaymentMethodIcon(pm.type)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-sm">{getPaymentMethodTypeName(pm.type)}</h3>
+                          {pm.type === 'bank' ? (
+                            <p className="text-xs text-muted-foreground">{pm.accountHolderName}</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">{pm.walletName} &bull; {pm.walletNumber}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={pm.active}
+                          onCheckedChange={() => handleToggleActive(pm)}
+                        />
+                      </div>
+                    </div>
+
+                    {pm.type === 'bank' && (
+                      <div className="space-y-1 text-xs text-muted-foreground mb-3">
+                        <p><span className="font-medium text-foreground">Account:</span> {pm.accountNumber}</p>
+                        {pm.branchName && <p><span className="font-medium text-foreground">Branch:</span> {pm.branchName}</p>}
+                      </div>
+                    )}
+
+                    {pm.qrImage && (
+                      <div className="mb-3">
+                        <img
+                          src={pm.qrImage}
+                          alt="QR Code"
+                          className="h-20 w-20 object-contain rounded-lg border"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <Badge variant={pm.active ? 'default' : 'secondary'} className="text-xs">
+                        {pm.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 hover:text-primary"
+                          onClick={() => openEdit(pm)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 hover:text-red-600"
+                          onClick={() => setDeleteId(pm.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add/Edit Payment Method Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-rose-500" />
+              {editingId ? 'Edit Payment Method' : 'Add Payment Method'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Type selector */}
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <Select value={type} onValueChange={(val: PaymentMethodType) => setType(val)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank">
+                    <span className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" /> Bank Transfer
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="esewa">
+                    <span className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4" /> eSewa
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="khalti">
+                    <span className="flex items-center gap-2">
+                      <Wallet className="w-4 h-4" /> Khalti
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="imepay">
+                    <span className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4" /> IME Pay
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Conditional fields based on type */}
+            {type === 'bank' ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="pm-accountHolder">Account Holder Name</Label>
+                  <Input
+                    id="pm-accountHolder"
+                    value={accountHolderName}
+                    onChange={(e) => setAccountHolderName(e.target.value)}
+                    placeholder="e.g. La Bella Beauty Salon"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pm-accountNumber">Account Number</Label>
+                  <Input
+                    id="pm-accountNumber"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    placeholder="e.g. 1234567890"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pm-branchName">Branch Name</Label>
+                  <Input
+                    id="pm-branchName"
+                    value={branchName}
+                    onChange={(e) => setBranchName(e.target.value)}
+                    placeholder="e.g. Kathmandu Main Branch"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="pm-walletName">
+                    {type === 'esewa' ? 'eSewa' : type === 'khalti' ? 'Khalti' : 'IME Pay'} Name
+                  </Label>
+                  <Input
+                    id="pm-walletName"
+                    value={walletName}
+                    onChange={(e) => setWalletName(e.target.value)}
+                    placeholder={`e.g. La Bella`}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pm-walletNumber">
+                    {type === 'esewa' ? 'eSewa' : type === 'khalti' ? 'Khalti' : 'IME Pay'} Number
+                  </Label>
+                  <Input
+                    id="pm-walletNumber"
+                    value={walletNumber}
+                    onChange={(e) => setWalletNumber(e.target.value)}
+                    placeholder="e.g. 9800000000"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* QR Image upload */}
+            <ImageUpload
+              value={qrImage}
+              onChange={(url) => setQrImage(url)}
+              label="QR Code Image (optional)"
+            />
+
+            {/* Active toggle */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium">Active</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enable this payment method for checkout
+                </p>
+              </div>
+              <Switch checked={active} onCheckedChange={setActive} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setDialogOpen(false); resetForm(); }}
+              className="rounded-full"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSave} className="rounded-full">
+              {editingId ? 'Save Changes' : 'Add Payment Method'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Payment Method AlertDialog */}
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(open) => {
+          if (!open) setDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Payment Method
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this payment method? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+// ==================== TAB 8: SETTINGS ====================
 
 function SettingsTab({
   homeButtonText,
@@ -1272,25 +2601,23 @@ function SettingsTab({
   setHomePageContent: (content: Partial<HomePageContent>) => void;
 }) {
   return (
-    <>
+    <div className="grid gap-6 max-w-2xl">
       {/* Navigation Button Text */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-rose-500" />
-            Navigation Settings
+          <CardTitle className="text-base flex items-center gap-2">
+            <Settings className="w-5 h-5 text-primary" />
+            Navigation Button Text
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <Label htmlFor="sa-home-btn-text" className="text-sm font-medium">
-              Home Navigation Button Text
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="home-btn-text">Home Button Text</Label>
             <p className="text-xs text-muted-foreground">
-              Change the text displayed on the &quot;Home&quot; navigation button across the entire site.
+              Change the text displayed on the &quot;Home&quot; navigation button.
             </p>
             <Input
-              id="sa-home-btn-text"
+              id="home-btn-text"
               value={homeButtonText}
               onChange={(e) => setHomeButtonText(e.target.value)}
               placeholder="Home"
@@ -1305,8 +2632,8 @@ function SettingsTab({
       {/* Home Page Content */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-rose-500" />
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
             Home Page Content
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
@@ -1316,32 +2643,32 @@ function SettingsTab({
         <CardContent className="space-y-5">
           {/* Hero Section */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Hero Section</h4>
+            <h4 className="text-sm font-semibold text-primary">Hero Section</h4>
             <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-heroBadge" className="text-xs">Badge Text</Label>
-                <Input id="sa-heroBadge" value={homePageContent.heroBadge} onChange={(e) => setHomePageContent({ heroBadge: e.target.value })} placeholder="Premium Beauty Salon" />
+                <Label htmlFor="hp-heroBadge" className="text-xs">Badge Text</Label>
+                <Input id="hp-heroBadge" value={homePageContent.heroBadge} onChange={(e) => setHomePageContent({ heroBadge: e.target.value })} placeholder="Premium Beauty Salon" />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-heroTitle" className="text-xs">Main Title</Label>
-                <Input id="sa-heroTitle" value={homePageContent.heroTitle} onChange={(e) => setHomePageContent({ heroTitle: e.target.value })} placeholder="La Bella" />
+                <Label htmlFor="hp-heroTitle" className="text-xs">Main Title</Label>
+                <Input id="hp-heroTitle" value={homePageContent.heroTitle} onChange={(e) => setHomePageContent({ heroTitle: e.target.value })} placeholder="La Bella" />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-heroSubtitle" className="text-xs">Subtitle</Label>
-                <Input id="sa-heroSubtitle" value={homePageContent.heroSubtitle} onChange={(e) => setHomePageContent({ heroSubtitle: e.target.value })} placeholder="Where Beauty Meets Elegance" />
+                <Label htmlFor="hp-heroSubtitle" className="text-xs">Subtitle</Label>
+                <Input id="hp-heroSubtitle" value={homePageContent.heroSubtitle} onChange={(e) => setHomePageContent({ heroSubtitle: e.target.value })} placeholder="Where Beauty Meets Elegance" />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-heroDescription" className="text-xs">Description</Label>
-                <Input id="sa-heroDescription" value={homePageContent.heroDescription} onChange={(e) => setHomePageContent({ heroDescription: e.target.value })} placeholder="Experience luxury beauty treatments tailored just for you" />
+                <Label htmlFor="hp-heroDescription" className="text-xs">Description</Label>
+                <Input id="hp-heroDescription" value={homePageContent.heroDescription} onChange={(e) => setHomePageContent({ heroDescription: e.target.value })} placeholder="Experience luxury beauty treatments tailored just for you" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="sa-heroButtonText1" className="text-xs">Primary Button</Label>
-                  <Input id="sa-heroButtonText1" value={homePageContent.heroButtonText1} onChange={(e) => setHomePageContent({ heroButtonText1: e.target.value })} placeholder="Book Appointment" />
+                  <Label htmlFor="hp-heroButtonText1" className="text-xs">Primary Button</Label>
+                  <Input id="hp-heroButtonText1" value={homePageContent.heroButtonText1} onChange={(e) => setHomePageContent({ heroButtonText1: e.target.value })} placeholder="Book Appointment" />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="sa-heroButtonText2" className="text-xs">Secondary Button</Label>
-                  <Input id="sa-heroButtonText2" value={homePageContent.heroButtonText2} onChange={(e) => setHomePageContent({ heroButtonText2: e.target.value })} placeholder="View Services" />
+                  <Label htmlFor="hp-heroButtonText2" className="text-xs">Secondary Button</Label>
+                  <Input id="hp-heroButtonText2" value={homePageContent.heroButtonText2} onChange={(e) => setHomePageContent({ heroButtonText2: e.target.value })} placeholder="View Services" />
                 </div>
               </div>
             </div>
@@ -1349,224 +2676,108 @@ function SettingsTab({
 
           {/* Why Choose Section */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Why Choose Section</h4>
+            <h4 className="text-sm font-semibold text-primary">Why Choose Section</h4>
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="sa-whyChooseTitle" className="text-xs">Section Title</Label>
-                  <Input id="sa-whyChooseTitle" value={homePageContent.whyChooseTitle} onChange={(e) => setHomePageContent({ whyChooseTitle: e.target.value })} placeholder="Why Choose" />
+                  <Label htmlFor="hp-whyChooseTitle" className="text-xs">Section Title</Label>
+                  <Input id="hp-whyChooseTitle" value={homePageContent.whyChooseTitle} onChange={(e) => setHomePageContent({ whyChooseTitle: e.target.value })} placeholder="Why Choose" />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="sa-whyChooseBrandName" className="text-xs">Brand Name (Highlighted)</Label>
-                  <Input id="sa-whyChooseBrandName" value={homePageContent.whyChooseBrandName} onChange={(e) => setHomePageContent({ whyChooseBrandName: e.target.value })} placeholder="La Bella" />
+                  <Label htmlFor="hp-whyChooseBrandName" className="text-xs">Brand Name (Highlighted)</Label>
+                  <Input id="hp-whyChooseBrandName" value={homePageContent.whyChooseBrandName} onChange={(e) => setHomePageContent({ whyChooseBrandName: e.target.value })} placeholder="La Bella" />
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-whyChooseSubtitle" className="text-xs">Section Subtitle</Label>
-                <Input id="sa-whyChooseSubtitle" value={homePageContent.whyChooseSubtitle} onChange={(e) => setHomePageContent({ whyChooseSubtitle: e.target.value })} placeholder="Discover the excellence that sets us apart" />
+                <Label htmlFor="hp-whyChooseSubtitle" className="text-xs">Subtitle</Label>
+                <Input id="hp-whyChooseSubtitle" value={homePageContent.whyChooseSubtitle} onChange={(e) => setHomePageContent({ whyChooseSubtitle: e.target.value })} placeholder="Discover the excellence that sets us apart" />
               </div>
             </div>
           </div>
 
           {/* Statistics */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Statistics</h4>
+            <h4 className="text-sm font-semibold text-primary">Statistics</h4>
             <div className="grid gap-3">
-              {/* Stat 1 */}
-              <div className="rounded-lg border p-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Statistic 1</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="grid gap-1">
-                    <Label htmlFor="sa-stat1Value" className="text-xs">Value</Label>
-                    <Input id="sa-stat1Value" value={homePageContent.stat1Value} onChange={(e) => setHomePageContent({ stat1Value: e.target.value })} placeholder="15+" />
+              {[1, 2, 3].map((num) => (
+                <div key={num} className="grid grid-cols-3 gap-3">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`hp-stat${num}Value`} className="text-xs">Stat {num} Value</Label>
+                    <Input id={`hp-stat${num}Value`} value={homePageContent[`stat${num}Value` as keyof HomePageContent] as string} onChange={(e) => setHomePageContent({ [`stat${num}Value`]: e.target.value })} placeholder="15+" />
                   </div>
-                  <div className="grid gap-1">
-                    <Label htmlFor="sa-stat1Label" className="text-xs">Label</Label>
-                    <Input id="sa-stat1Label" value={homePageContent.stat1Label} onChange={(e) => setHomePageContent({ stat1Label: e.target.value })} placeholder="Years of Experience" />
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`hp-stat${num}Label`} className="text-xs">Stat {num} Label</Label>
+                    <Input id={`hp-stat${num}Label`} value={homePageContent[`stat${num}Label` as keyof HomePageContent] as string} onChange={(e) => setHomePageContent({ [`stat${num}Label`]: e.target.value })} placeholder="Years of Experience" />
                   </div>
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="sa-stat1Description" className="text-xs">Description</Label>
-                  <Input id="sa-stat1Description" value={homePageContent.stat1Description} onChange={(e) => setHomePageContent({ stat1Description: e.target.value })} placeholder="Over a decade of crafting beauty and building confidence" />
-                </div>
-              </div>
-              {/* Stat 2 */}
-              <div className="rounded-lg border p-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Statistic 2</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="grid gap-1">
-                    <Label htmlFor="sa-stat2Value" className="text-xs">Value</Label>
-                    <Input id="sa-stat2Value" value={homePageContent.stat2Value} onChange={(e) => setHomePageContent({ stat2Value: e.target.value })} placeholder="5000+" />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label htmlFor="sa-stat2Label" className="text-xs">Label</Label>
-                    <Input id="sa-stat2Label" value={homePageContent.stat2Label} onChange={(e) => setHomePageContent({ stat2Label: e.target.value })} placeholder="Happy Clients" />
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`hp-stat${num}Description`} className="text-xs">Stat {num} Description</Label>
+                    <Input id={`hp-stat${num}Description`} value={homePageContent[`stat${num}Description` as keyof HomePageContent] as string} onChange={(e) => setHomePageContent({ [`stat${num}Description`]: e.target.value })} placeholder="Description" />
                   </div>
                 </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="sa-stat2Description" className="text-xs">Description</Label>
-                  <Input id="sa-stat2Description" value={homePageContent.stat2Description} onChange={(e) => setHomePageContent({ stat2Description: e.target.value })} placeholder="Trusted by thousands who keep coming back for more" />
-                </div>
-              </div>
-              {/* Stat 3 */}
-              <div className="rounded-lg border p-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">Statistic 3</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="grid gap-1">
-                    <Label htmlFor="sa-stat3Value" className="text-xs">Value</Label>
-                    <Input id="sa-stat3Value" value={homePageContent.stat3Value} onChange={(e) => setHomePageContent({ stat3Value: e.target.value })} placeholder="50+" />
-                  </div>
-                  <div className="grid gap-1">
-                    <Label htmlFor="sa-stat3Label" className="text-xs">Label</Label>
-                    <Input id="sa-stat3Label" value={homePageContent.stat3Label} onChange={(e) => setHomePageContent({ stat3Label: e.target.value })} placeholder="Expert Staff" />
-                  </div>
-                </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="sa-stat3Description" className="text-xs">Description</Label>
-                  <Input id="sa-stat3Description" value={homePageContent.stat3Description} onChange={(e) => setHomePageContent({ stat3Description: e.target.value })} placeholder="Skilled professionals passionate about your transformation" />
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
           {/* Popular Services Section */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Popular Services Section</h4>
+            <h4 className="text-sm font-semibold text-primary">Popular Services Section</h4>
             <div className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="sa-popularServicesTitle" className="text-xs">Title</Label>
-                  <Input id="sa-popularServicesTitle" value={homePageContent.popularServicesTitle} onChange={(e) => setHomePageContent({ popularServicesTitle: e.target.value })} placeholder="Popular" />
+                  <Label htmlFor="hp-popularServicesTitle" className="text-xs">Section Title</Label>
+                  <Input id="hp-popularServicesTitle" value={homePageContent.popularServicesTitle} onChange={(e) => setHomePageContent({ popularServicesTitle: e.target.value })} placeholder="Popular" />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="sa-popularServicesHighlight" className="text-xs">Highlighted Word</Label>
-                  <Input id="sa-popularServicesHighlight" value={homePageContent.popularServicesHighlight} onChange={(e) => setHomePageContent({ popularServicesHighlight: e.target.value })} placeholder="Services" />
+                  <Label htmlFor="hp-popularServicesHighlight" className="text-xs">Highlighted Text</Label>
+                  <Input id="hp-popularServicesHighlight" value={homePageContent.popularServicesHighlight} onChange={(e) => setHomePageContent({ popularServicesHighlight: e.target.value })} placeholder="Services" />
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-popularServicesSubtitle" className="text-xs">Subtitle</Label>
-                <Input id="sa-popularServicesSubtitle" value={homePageContent.popularServicesSubtitle} onChange={(e) => setHomePageContent({ popularServicesSubtitle: e.target.value })} placeholder="Explore our most loved beauty treatments" />
+                <Label htmlFor="hp-popularServicesSubtitle" className="text-xs">Subtitle</Label>
+                <Input id="hp-popularServicesSubtitle" value={homePageContent.popularServicesSubtitle} onChange={(e) => setHomePageContent({ popularServicesSubtitle: e.target.value })} placeholder="Explore our most loved beauty treatments" />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-viewAllServicesButton" className="text-xs">View All Button Text</Label>
-                <Input id="sa-viewAllServicesButton" value={homePageContent.viewAllServicesButton} onChange={(e) => setHomePageContent({ viewAllServicesButton: e.target.value })} placeholder="View All Services" />
+                <Label htmlFor="hp-viewAllServicesButton" className="text-xs">View All Button Text</Label>
+                <Input id="hp-viewAllServicesButton" value={homePageContent.viewAllServicesButton} onChange={(e) => setHomePageContent({ viewAllServicesButton: e.target.value })} placeholder="View All Services" />
               </div>
             </div>
           </div>
 
           {/* CTA Section */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Call-to-Action Section</h4>
+            <h4 className="text-sm font-semibold text-primary">CTA Section</h4>
             <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-ctaTitle" className="text-xs">Title</Label>
-                <Input id="sa-ctaTitle" value={homePageContent.ctaTitle} onChange={(e) => setHomePageContent({ ctaTitle: e.target.value })} placeholder="Ready to Transform Your Look?" />
+                <Label htmlFor="hp-ctaTitle" className="text-xs">Title</Label>
+                <Input id="hp-ctaTitle" value={homePageContent.ctaTitle} onChange={(e) => setHomePageContent({ ctaTitle: e.target.value })} placeholder="Ready to Transform Your Look?" />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-ctaDescription" className="text-xs">Description</Label>
-                <Input id="sa-ctaDescription" value={homePageContent.ctaDescription} onChange={(e) => setHomePageContent({ ctaDescription: e.target.value })} placeholder="Let our expert team create the perfect look for you..." />
+                <Label htmlFor="hp-ctaDescription" className="text-xs">Description</Label>
+                <Input id="hp-ctaDescription" value={homePageContent.ctaDescription} onChange={(e) => setHomePageContent({ ctaDescription: e.target.value })} placeholder="Let our expert team create the perfect look for you." />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="sa-ctaButtonText" className="text-xs">Button Text</Label>
-                <Input id="sa-ctaButtonText" value={homePageContent.ctaButtonText} onChange={(e) => setHomePageContent({ ctaButtonText: e.target.value })} placeholder="Book Your Appointment Today" />
+                <Label htmlFor="hp-ctaButtonText" className="text-xs">Button Text</Label>
+                <Input id="hp-ctaButtonText" value={homePageContent.ctaButtonText} onChange={(e) => setHomePageContent({ ctaButtonText: e.target.value })} placeholder="Book Your Appointment Today" />
               </div>
             </div>
           </div>
 
-          {/* Reset Button */}
-          <div className="flex items-center justify-end pt-2 border-t gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full text-xs gap-1.5"
-              onClick={() => {
-                const defaults = {
-                  heroBadge: "Premium Beauty Salon",
-                  heroTitle: "La Bella",
-                  heroSubtitle: "Where Beauty Meets Elegance",
-                  heroDescription: "Experience luxury beauty treatments tailored just for you",
-                  heroButtonText1: "Book Appointment",
-                  heroButtonText2: "View Services",
-                  whyChooseTitle: "Why Choose",
-                  whyChooseBrandName: "La Bella",
-                  whyChooseSubtitle: "Discover the excellence that sets us apart",
-                  stat1Value: "15+",
-                  stat1Label: "Years of Experience",
-                  stat1Description: "Over a decade of crafting beauty and building confidence",
-                  stat2Value: "5000+",
-                  stat2Label: "Happy Clients",
-                  stat2Description: "Trusted by thousands who keep coming back for more",
-                  stat3Value: "50+",
-                  stat3Label: "Expert Staff",
-                  stat3Description: "Skilled professionals passionate about your transformation",
-                  popularServicesTitle: "Popular",
-                  popularServicesHighlight: "Services",
-                  popularServicesSubtitle: "Explore our most loved beauty treatments",
-                  viewAllServicesButton: "View All Services",
-                  ctaTitle: "Ready to Transform Your Look?",
-                  ctaDescription: "Let our expert team create the perfect look for you. Book your appointment today and step into a world of beauty.",
-                  ctaButtonText: "Book Your Appointment Today",
-                  footerBrandName: "La Bella",
-                  footerBrandDescription: "Your premier destination for luxury beauty treatments. Experience the art of beauty with our expert team.",
-                  footerContactHeading: "Contact Us",
-                  footerAddressLine1: "123 Beauty Lane, Suite 100",
-                  footerAddressLine2: "New York, NY 10001",
-                  footerPhone: "(555) 123-4567",
-                  footerEmail: "hello@labella.com",
-                  footerHoursHeading: "Opening Hours",
-                  footerHoursWeekday: "Mon - Fri: 9:00 AM - 8:00 PM",
-                  footerHoursSaturday: "Saturday: 9:00 AM - 6:00 PM",
-                  footerHoursSunday: "Sunday: 10:00 AM - 5:00 PM",
-                  footerLinksHeading: "Quick Links",
-                  footerLink1: "About Us",
-                  footerLink2: "Our Team",
-                  footerLink3: "Gift Cards",
-                  footerLink4: "Privacy Policy",
-                  footerLink5: "Terms of Service",
-                };
-                setHomePageContent(defaults);
-                toast.success('Home page content reset to defaults');
-              }}
-            >
-              Reset to Defaults
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Footer Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-rose-500" />
-            Footer Content
-          </CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Edit all the text content displayed in the Footer. Changes take effect immediately.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Brand Section */}
+          {/* Footer Section */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Brand Section</h4>
+            <h4 className="text-sm font-semibold text-primary">Footer Section</h4>
             <div className="grid gap-3">
-              <div className="grid gap-1.5">
-                <Label htmlFor="hp-footerBrandName" className="text-xs">Brand Name</Label>
-                <Input id="hp-footerBrandName" value={homePageContent.footerBrandName} onChange={(e) => setHomePageContent({ footerBrandName: e.target.value })} placeholder="La Bella" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerBrandName" className="text-xs">Brand Name</Label>
+                  <Input id="hp-footerBrandName" value={homePageContent.footerBrandName} onChange={(e) => setHomePageContent({ footerBrandName: e.target.value })} placeholder="La Bella" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerBrandDescription" className="text-xs">Brand Description</Label>
+                  <Input id="hp-footerBrandDescription" value={homePageContent.footerBrandDescription} onChange={(e) => setHomePageContent({ footerBrandDescription: e.target.value })} placeholder="Your premier destination for luxury beauty treatments." />
+                </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="hp-footerBrandDescription" className="text-xs">Brand Description</Label>
-                <Input id="hp-footerBrandDescription" value={homePageContent.footerBrandDescription} onChange={(e) => setHomePageContent({ footerBrandDescription: e.target.value })} placeholder="Your premier destination for luxury beauty treatments..." />
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Section */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Contact Section</h4>
-            <div className="grid gap-3">
-              <div className="grid gap-1.5">
-                <Label htmlFor="hp-footerContactHeading" className="text-xs">Contact Section Heading</Label>
+                <Label htmlFor="hp-footerContactHeading" className="text-xs">Contact Heading</Label>
                 <Input id="hp-footerContactHeading" value={homePageContent.footerContactHeading} onChange={(e) => setHomePageContent({ footerContactHeading: e.target.value })} placeholder="Contact Us" />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1581,23 +2792,16 @@ function SettingsTab({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="hp-footerPhone" className="text-xs">Phone Number</Label>
+                  <Label htmlFor="hp-footerPhone" className="text-xs">Phone</Label>
                   <Input id="hp-footerPhone" value={homePageContent.footerPhone} onChange={(e) => setHomePageContent({ footerPhone: e.target.value })} placeholder="(555) 123-4567" />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="hp-footerEmail" className="text-xs">Email Address</Label>
+                  <Label htmlFor="hp-footerEmail" className="text-xs">Email</Label>
                   <Input id="hp-footerEmail" value={homePageContent.footerEmail} onChange={(e) => setHomePageContent({ footerEmail: e.target.value })} placeholder="hello@labella.com" />
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Opening Hours Section */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Opening Hours Section</h4>
-            <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="hp-footerHoursHeading" className="text-xs">Hours Section Heading</Label>
+                <Label htmlFor="hp-footerHoursHeading" className="text-xs">Hours Heading</Label>
                 <Input id="hp-footerHoursHeading" value={homePageContent.footerHoursHeading} onChange={(e) => setHomePageContent({ footerHoursHeading: e.target.value })} placeholder="Opening Hours" />
               </div>
               <div className="grid grid-cols-3 gap-3">
@@ -1614,45 +2818,72 @@ function SettingsTab({
                   <Input id="hp-footerHoursSunday" value={homePageContent.footerHoursSunday} onChange={(e) => setHomePageContent({ footerHoursSunday: e.target.value })} placeholder="Sunday: 10:00 AM - 5:00 PM" />
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Quick Links Section */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-rose-500">Quick Links Section</h4>
-            <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="hp-footerLinksHeading" className="text-xs">Links Section Heading</Label>
+                <Label htmlFor="hp-footerLinksHeading" className="text-xs">Links Heading</Label>
                 <Input id="hp-footerLinksHeading" value={homePageContent.footerLinksHeading} onChange={(e) => setHomePageContent({ footerLinksHeading: e.target.value })} placeholder="Quick Links" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="hp-footerLink1" className="text-xs">Link 1</Label>
-                  <Input id="hp-footerLink1" value={homePageContent.footerLink1} onChange={(e) => setHomePageContent({ footerLink1: e.target.value })} placeholder="About Us" />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="hp-footerLink2" className="text-xs">Link 2</Label>
-                  <Input id="hp-footerLink2" value={homePageContent.footerLink2} onChange={(e) => setHomePageContent({ footerLink2: e.target.value })} placeholder="Our Team" />
-                </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[1, 2, 3].map((num) => (
+                  <div key={num} className="grid gap-1.5">
+                    <Label htmlFor={`hp-footerLink${num}`} className="text-xs">Link {num}</Label>
+                    <Input id={`hp-footerLink${num}`} value={homePageContent[`footerLink${num}` as keyof HomePageContent] as string} onChange={(e) => setHomePageContent({ [`footerLink${num}`]: e.target.value })} placeholder={`Link ${num}`} />
+                  </div>
+                ))}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="hp-footerLink3" className="text-xs">Link 3</Label>
-                  <Input id="hp-footerLink3" value={homePageContent.footerLink3} onChange={(e) => setHomePageContent({ footerLink3: e.target.value })} placeholder="Gift Cards" />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="hp-footerLink4" className="text-xs">Link 4</Label>
-                  <Input id="hp-footerLink4" value={homePageContent.footerLink4} onChange={(e) => setHomePageContent({ footerLink4: e.target.value })} placeholder="Privacy Policy" />
-                </div>
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="hp-footerLink5" className="text-xs">Link 5</Label>
-                <Input id="hp-footerLink5" value={homePageContent.footerLink5} onChange={(e) => setHomePageContent({ footerLink5: e.target.value })} placeholder="Terms of Service" />
+                {[4, 5].map((num) => (
+                  <div key={num} className="grid gap-1.5">
+                    <Label htmlFor={`hp-footerLink${num}`} className="text-xs">Link {num}</Label>
+                    <Input id={`hp-footerLink${num}`} value={homePageContent[`footerLink${num}` as keyof HomePageContent] as string} onChange={(e) => setHomePageContent({ [`footerLink${num}`]: e.target.value })} placeholder={`Link ${num}`} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
-    </>
+
+      {/* Social Media Links */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            Social Media Links
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Edit the social media links displayed in the footer. Changes take effect immediately.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor="hp-footerInstagramLink" className="text-xs">Instagram Link</Label>
+            <Input id="hp-footerInstagramLink" value={homePageContent.footerInstagramLink} onChange={(e) => setHomePageContent({ footerInstagramLink: e.target.value })} placeholder="https://instagram.com/..." />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="hp-footerFacebookLink" className="text-xs">Facebook Link</Label>
+            <Input id="hp-footerFacebookLink" value={homePageContent.footerFacebookLink} onChange={(e) => setHomePageContent({ footerFacebookLink: e.target.value })} placeholder="https://facebook.com/..." />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="hp-footerTwitterLink" className="text-xs">Twitter Link</Label>
+            <Input id="hp-footerTwitterLink" value={homePageContent.footerTwitterLink} onChange={(e) => setHomePageContent({ footerTwitterLink: e.target.value })} placeholder="https://twitter.com/..." />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="hp-footerTiktokLink" className="text-xs">TikTok Link</Label>
+            <Input id="hp-footerTiktokLink" value={homePageContent.footerTiktokLink} onChange={(e) => setHomePageContent({ footerTiktokLink: e.target.value })} placeholder="https://tiktok.com/@..." />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="hp-footerYoutubeLink" className="text-xs">YouTube Link</Label>
+            <Input id="hp-footerYoutubeLink" value={homePageContent.footerYoutubeLink} onChange={(e) => setHomePageContent({ footerYoutubeLink: e.target.value })} placeholder="https://youtube.com/@..." />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="hp-footerWhatsappLink" className="text-xs">WhatsApp Link/Number</Label>
+            <Input id="hp-footerWhatsappLink" value={homePageContent.footerWhatsappLink} onChange={(e) => setHomePageContent({ footerWhatsappLink: e.target.value })} placeholder="https://wa.me/9779800000000" />
+          </div>
+          <p className="text-xs text-muted-foreground pt-1">
+            Changes are saved automatically. Leave a field empty to hide the icon in the footer.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

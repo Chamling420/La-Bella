@@ -15,6 +15,7 @@ import AdminPanel from "@/components/pages/AdminPanel";
 import SuperAdminPanel from "@/components/pages/SuperAdminPanel";
 import ProfilePage from "@/components/pages/ProfilePage";
 import { LoginPage, RegisterPage } from "@/components/pages/AuthPages";
+import MessageUs from "@/components/MessageUs";
 
 function PageRouter() {
   const currentPage = useAppStore((s) => s.currentPage);
@@ -77,6 +78,7 @@ export default function Home() {
         <PageRouter />
       </main>
       <Footer />
+      <MessageUs />
     </div>
   );
 }

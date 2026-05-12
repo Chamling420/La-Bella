@@ -60,6 +60,66 @@ export interface Review {
   date: string;
 }
 
+// ==================== NEW TYPES ====================
+export interface MessageReply {
+  id: string;
+  text: string;
+  adminName: string;
+  adminId: string;
+  timestamp: string;
+}
+
+export interface Message {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  text: string;
+  timestamp: string;
+  read: boolean;
+  replies: MessageReply[];
+}
+
+export interface OrderItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  items: OrderItem[];
+  total: number;
+  paymentMethod: "cash_on_delivery" | "bank" | "esewa" | "khalti" | "imepay";
+  status: "pending" | "confirmed" | "cancelled";
+  // Payment verification fields (for online payments)
+  fullName?: string;
+  transactionNumber?: string;
+  paymentSlip?: string;
+  createdAt: string;
+}
+
+export type PaymentMethodType = "bank" | "esewa" | "khalti" | "imepay";
+
+export interface PaymentMethod {
+  id: string;
+  type: PaymentMethodType;
+  // Bank fields
+  accountHolderName?: string;
+  accountNumber?: string;
+  branchName?: string;
+  // Digital wallet fields
+  walletName?: string;
+  walletNumber?: string;
+  // Common
+  qrImage?: string;
+  active: boolean;
+}
+
 export type Page =
   | "home"
   | "services"
@@ -129,6 +189,14 @@ export interface HomePageContent {
   footerLink3: string;
   footerLink4: string;
   footerLink5: string;
+
+  // Social Media Links
+  footerInstagramLink: string;
+  footerFacebookLink: string;
+  footerTwitterLink: string;
+  footerTiktokLink: string;
+  footerYoutubeLink: string;
+  footerWhatsappLink: string;
 }
 
 const DEFAULT_HOME_PAGE_CONTENT: HomePageContent = {
@@ -179,6 +247,13 @@ const DEFAULT_HOME_PAGE_CONTENT: HomePageContent = {
   footerLink3: "Gift Cards",
   footerLink4: "Privacy Policy",
   footerLink5: "Terms of Service",
+
+  footerInstagramLink: "https://instagram.com/labella",
+  footerFacebookLink: "https://facebook.com/labella",
+  footerTwitterLink: "https://twitter.com/labella",
+  footerTiktokLink: "https://tiktok.com/@labella",
+  footerYoutubeLink: "https://youtube.com/@labella",
+  footerWhatsappLink: "https://wa.me/9779800000000",
 };
 
 // ==================== DEFAULT DATA ====================
@@ -239,6 +314,42 @@ const DEFAULT_REVIEWS: Review[] = [
   { id: "r1", userId: "u3", userName: "Regular User", text: "Amazing experience! The haircut was perfect and the staff was so friendly.", rating: 5, date: "2024-06-15" },
   { id: "r2", userId: "u3", userName: "Regular User", text: "Great facial treatment. My skin feels rejuvenated!", rating: 4, date: "2024-07-20" },
   { id: "r3", userId: "u2", userName: "Admin User", text: "The bridal makeup was stunning. Highly recommend for special occasions.", rating: 5, date: "2024-08-10" },
+];
+
+const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
+  {
+    id: "pm1",
+    type: "bank",
+    accountHolderName: "La Bella Beauty Salon",
+    accountNumber: "1234567890",
+    branchName: "Kathmandu Main Branch",
+    qrImage: "",
+    active: true,
+  },
+  {
+    id: "pm2",
+    type: "esewa",
+    walletName: "La Bella",
+    walletNumber: "9800000000",
+    qrImage: "",
+    active: true,
+  },
+  {
+    id: "pm3",
+    type: "khalti",
+    walletName: "La Bella",
+    walletNumber: "9800000001",
+    qrImage: "",
+    active: true,
+  },
+  {
+    id: "pm4",
+    type: "imepay",
+    walletName: "La Bella",
+    walletNumber: "9800000002",
+    qrImage: "",
+    active: true,
+  },
 ];
 
 // ==================== HELPER ====================
@@ -312,6 +423,27 @@ interface AppState {
   reviews: Review[];
   addReview: (text: string, rating: number) => void;
   deleteReview: (id: string) => void;
+
+  // ===== NEW: Messages =====
+  messages: Message[];
+  addMessage: (text: string) => void;
+  replyToMessage: (messageId: string, text: string) => void;
+  markMessageRead: (messageId: string) => void;
+  deleteMessage: (messageId: string) => void;
+  unreadMessageCount: () => number;
+
+  // ===== NEW: Orders =====
+  orders: Order[];
+  addOrder: (order: Omit<Order, "id" | "createdAt">) => void;
+  confirmOrder: (id: string) => void;
+  cancelOrder: (id: string) => void;
+
+  // ===== NEW: Payment Methods =====
+  paymentMethods: PaymentMethod[];
+  addPaymentMethod: (pm: Omit<PaymentMethod, "id">) => void;
+  updatePaymentMethod: (id: string, pm: Partial<PaymentMethod>) => void;
+  deletePaymentMethod: (id: string) => void;
+  getActivePaymentMethods: () => PaymentMethod[];
 }
 
 // ==================== LOCALSTORAGE HELPERS ====================
@@ -335,14 +467,12 @@ function saveToStorage(key: string, value: unknown) {
 }
 
 // ==================== CREATE STORE ====================
-// Store is created with DEFAULT values first (safe for SSR),
-// then hydrated from localStorage on the client via hydrate()
 export const useAppStore = create<AppState>((set, get) => ({
   // Hydration state
   _hydrated: false,
   _hasHydrated: () => get()._hydrated,
   hydrate: () => {
-    if (get()._hydrated) return; // Only hydrate once
+    if (get()._hydrated) return;
 
     const users = loadFromStorage<User[]>("labella_users", DEFAULT_USERS);
     const services = loadFromStorage<Service[]>("labella_services", DEFAULT_SERVICES);
@@ -353,6 +483,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const reviews = loadFromStorage<Review[]>("labella_reviews", DEFAULT_REVIEWS);
     const homeButtonText = loadFromStorage<string>("labella_home_button_text", "Home");
     const homePageContent = loadFromStorage<HomePageContent>("labella_home_page_content", DEFAULT_HOME_PAGE_CONTENT);
+    const messages = loadFromStorage<Message[]>("labella_messages", []);
+    const orders = loadFromStorage<Order[]>("labella_orders", []);
+    const paymentMethods = loadFromStorage<PaymentMethod[]>("labella_payment_methods", DEFAULT_PAYMENT_METHODS);
 
     let currentUser: User | null = null;
     const storedUserId = localStorage.getItem("labella_current_user_id");
@@ -371,6 +504,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       reviews,
       homeButtonText,
       homePageContent,
+      messages,
+      orders,
+      paymentMethods,
       currentUser,
     });
   },
@@ -379,7 +515,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentPage: "home" as Page,
   setCurrentPage: (page) => set({ currentPage: page }),
 
-  // Auth - default to null (will be set after hydration)
+  // Auth
   currentUser: null,
   login: (email, password) => {
     const users = get().users;
@@ -425,7 +561,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     return true;
   },
 
-  // Users - defaults (will be replaced on hydration)
+  // Users
   users: DEFAULT_USERS,
   setUsers: (users) => {
     set({ users });
@@ -437,7 +573,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     );
     set({ users });
     saveToStorage("labella_users", users);
-    // Update current user if their role changed
     const current = get().currentUser;
     if (current && current.id === userId) {
       set({ currentUser: { ...current, role } });
@@ -445,13 +580,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   deleteUser: (userId) => {
     const current = get().currentUser;
-    if (current && current.id === userId) return; // can't delete self
+    if (current && current.id === userId) return;
     const users = get().users.filter((u) => u.id !== userId);
     set({ users });
     saveToStorage("labella_users", users);
   },
 
-  // Services - defaults
+  // Services
   services: DEFAULT_SERVICES,
   addService: (service) => {
     const services = [...get().services, { ...service, id: genId() }];
@@ -471,7 +606,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveToStorage("labella_services", services);
   },
 
-  // Products - defaults
+  // Products
   products: DEFAULT_PRODUCTS,
   addProduct: (product) => {
     const products = [...get().products, { ...product, id: genId() }];
@@ -491,7 +626,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveToStorage("labella_products", products);
   },
 
-  // Cart - defaults
+  // Cart
   cart: [],
   addToCart: (productId) => {
     const cart = get().cart;
@@ -528,7 +663,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveToStorage("labella_cart", []);
   },
 
-  // Appointments - defaults
+  // Appointments
   appointments: [],
   addAppointment: (serviceId, serviceName, date) => {
     const user = get().currentUser;
@@ -561,14 +696,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveToStorage("labella_appointments", appointments);
   },
 
-  // Site Settings - defaults
+  // Site Settings
   homeButtonText: "Home",
   setHomeButtonText: (text) => {
     set({ homeButtonText: text });
     saveToStorage("labella_home_button_text", text);
   },
 
-  // Home Page Content - defaults
+  // Home Page Content
   homePageContent: DEFAULT_HOME_PAGE_CONTENT,
   setHomePageContent: (content) => {
     const updated = { ...get().homePageContent, ...content };
@@ -576,7 +711,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveToStorage("labella_home_page_content", updated);
   },
 
-  // Gallery - defaults
+  // Gallery
   gallery: DEFAULT_GALLERY,
   addGalleryImage: (url) => {
     const user = get().currentUser;
@@ -596,7 +731,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveToStorage("labella_gallery", gallery);
   },
 
-  // Reviews - defaults
+  // Reviews
   reviews: DEFAULT_REVIEWS,
   addReview: (text, rating) => {
     const user = get().currentUser;
@@ -617,5 +752,106 @@ export const useAppStore = create<AppState>((set, get) => ({
     const reviews = get().reviews.filter((r) => r.id !== id);
     set({ reviews });
     saveToStorage("labella_reviews", reviews);
+  },
+
+  // ===== NEW: Messages =====
+  messages: [],
+  addMessage: (text) => {
+    const user = get().currentUser;
+    if (!user) return;
+    const message: Message = {
+      id: genId(),
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      text,
+      timestamp: new Date().toISOString(),
+      read: false,
+      replies: [],
+    };
+    const messages = [...get().messages, message];
+    set({ messages });
+    saveToStorage("labella_messages", messages);
+  },
+  replyToMessage: (messageId, text) => {
+    const user = get().currentUser;
+    if (!user) return;
+    const reply: MessageReply = {
+      id: genId(),
+      text,
+      adminName: user.name,
+      adminId: user.id,
+      timestamp: new Date().toISOString(),
+    };
+    const messages = get().messages.map((m) =>
+      m.id === messageId ? { ...m, replies: [...m.replies, reply] } : m
+    );
+    set({ messages });
+    saveToStorage("labella_messages", messages);
+  },
+  markMessageRead: (messageId) => {
+    const messages = get().messages.map((m) =>
+      m.id === messageId ? { ...m, read: true } : m
+    );
+    set({ messages });
+    saveToStorage("labella_messages", messages);
+  },
+  deleteMessage: (messageId) => {
+    const messages = get().messages.filter((m) => m.id !== messageId);
+    set({ messages });
+    saveToStorage("labella_messages", messages);
+  },
+  unreadMessageCount: () => {
+    return get().messages.filter((m) => !m.read).length;
+  },
+
+  // ===== NEW: Orders =====
+  orders: [],
+  addOrder: (orderData) => {
+    const order: Order = {
+      ...orderData,
+      id: genId(),
+      createdAt: new Date().toISOString(),
+    };
+    const orders = [...get().orders, order];
+    set({ orders });
+    saveToStorage("labella_orders", orders);
+  },
+  confirmOrder: (id) => {
+    const orders = get().orders.map((o) =>
+      o.id === id ? { ...o, status: "confirmed" as const } : o
+    );
+    set({ orders });
+    saveToStorage("labella_orders", orders);
+  },
+  cancelOrder: (id) => {
+    const orders = get().orders.map((o) =>
+      o.id === id ? { ...o, status: "cancelled" as const } : o
+    );
+    set({ orders });
+    saveToStorage("labella_orders", orders);
+  },
+
+  // ===== NEW: Payment Methods =====
+  paymentMethods: DEFAULT_PAYMENT_METHODS,
+  addPaymentMethod: (pm) => {
+    const paymentMethods = [...get().paymentMethods, { ...pm, id: genId() }];
+    set({ paymentMethods });
+    saveToStorage("labella_payment_methods", paymentMethods);
+  },
+  updatePaymentMethod: (id, pm) => {
+    const paymentMethods = get().paymentMethods.map((p) =>
+      p.id === id ? { ...p, ...pm } : p
+    );
+    set({ paymentMethods });
+    saveToStorage("labella_payment_methods", paymentMethods);
+  },
+  deletePaymentMethod: (id) => {
+    const paymentMethods = get().paymentMethods.filter((p) => p.id !== id);
+    set({ paymentMethods });
+    saveToStorage("labella_payment_methods", paymentMethods);
+  },
+  getActivePaymentMethods: () => {
+    return get().paymentMethods.filter((p) => p.active);
   },
 }));
