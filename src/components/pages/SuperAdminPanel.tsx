@@ -64,6 +64,7 @@ import {
   Clock,
   Settings,
   Sparkles,
+  MapPin,
 } from 'lucide-react';
 
 // ==================== HELPERS ====================
@@ -1508,6 +1509,23 @@ function SettingsTab({
                   ctaTitle: "Ready to Transform Your Look?",
                   ctaDescription: "Let our expert team create the perfect look for you. Book your appointment today and step into a world of beauty.",
                   ctaButtonText: "Book Your Appointment Today",
+                  footerBrandName: "La Bella",
+                  footerBrandDescription: "Your premier destination for luxury beauty treatments. Experience the art of beauty with our expert team.",
+                  footerContactHeading: "Contact Us",
+                  footerAddressLine1: "123 Beauty Lane, Suite 100",
+                  footerAddressLine2: "New York, NY 10001",
+                  footerPhone: "(555) 123-4567",
+                  footerEmail: "hello@labella.com",
+                  footerHoursHeading: "Opening Hours",
+                  footerHoursWeekday: "Mon - Fri: 9:00 AM - 8:00 PM",
+                  footerHoursSaturday: "Saturday: 9:00 AM - 6:00 PM",
+                  footerHoursSunday: "Sunday: 10:00 AM - 5:00 PM",
+                  footerLinksHeading: "Quick Links",
+                  footerLink1: "About Us",
+                  footerLink2: "Our Team",
+                  footerLink3: "Gift Cards",
+                  footerLink4: "Privacy Policy",
+                  footerLink5: "Terms of Service",
                 };
                 setHomePageContent(defaults);
                 toast.success('Home page content reset to defaults');
@@ -1515,6 +1533,126 @@ function SettingsTab({
             >
               Reset to Defaults
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Footer Content */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-rose-500" />
+            Footer Content
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Edit all the text content displayed in the Footer. Changes take effect immediately.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Brand Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Brand Section</h4>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="hp-footerBrandName" className="text-xs">Brand Name</Label>
+                <Input id="hp-footerBrandName" value={homePageContent.footerBrandName} onChange={(e) => setHomePageContent({ footerBrandName: e.target.value })} placeholder="La Bella" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="hp-footerBrandDescription" className="text-xs">Brand Description</Label>
+                <Input id="hp-footerBrandDescription" value={homePageContent.footerBrandDescription} onChange={(e) => setHomePageContent({ footerBrandDescription: e.target.value })} placeholder="Your premier destination for luxury beauty treatments..." />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Contact Section</h4>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="hp-footerContactHeading" className="text-xs">Contact Section Heading</Label>
+                <Input id="hp-footerContactHeading" value={homePageContent.footerContactHeading} onChange={(e) => setHomePageContent({ footerContactHeading: e.target.value })} placeholder="Contact Us" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerAddressLine1" className="text-xs">Address Line 1</Label>
+                  <Input id="hp-footerAddressLine1" value={homePageContent.footerAddressLine1} onChange={(e) => setHomePageContent({ footerAddressLine1: e.target.value })} placeholder="123 Beauty Lane, Suite 100" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerAddressLine2" className="text-xs">Address Line 2</Label>
+                  <Input id="hp-footerAddressLine2" value={homePageContent.footerAddressLine2} onChange={(e) => setHomePageContent({ footerAddressLine2: e.target.value })} placeholder="New York, NY 10001" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerPhone" className="text-xs">Phone Number</Label>
+                  <Input id="hp-footerPhone" value={homePageContent.footerPhone} onChange={(e) => setHomePageContent({ footerPhone: e.target.value })} placeholder="(555) 123-4567" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerEmail" className="text-xs">Email Address</Label>
+                  <Input id="hp-footerEmail" value={homePageContent.footerEmail} onChange={(e) => setHomePageContent({ footerEmail: e.target.value })} placeholder="hello@labella.com" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Opening Hours Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Opening Hours Section</h4>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="hp-footerHoursHeading" className="text-xs">Hours Section Heading</Label>
+                <Input id="hp-footerHoursHeading" value={homePageContent.footerHoursHeading} onChange={(e) => setHomePageContent({ footerHoursHeading: e.target.value })} placeholder="Opening Hours" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerHoursWeekday" className="text-xs">Weekday Hours</Label>
+                  <Input id="hp-footerHoursWeekday" value={homePageContent.footerHoursWeekday} onChange={(e) => setHomePageContent({ footerHoursWeekday: e.target.value })} placeholder="Mon - Fri: 9:00 AM - 8:00 PM" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerHoursSaturday" className="text-xs">Saturday Hours</Label>
+                  <Input id="hp-footerHoursSaturday" value={homePageContent.footerHoursSaturday} onChange={(e) => setHomePageContent({ footerHoursSaturday: e.target.value })} placeholder="Saturday: 9:00 AM - 6:00 PM" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerHoursSunday" className="text-xs">Sunday Hours</Label>
+                  <Input id="hp-footerHoursSunday" value={homePageContent.footerHoursSunday} onChange={(e) => setHomePageContent({ footerHoursSunday: e.target.value })} placeholder="Sunday: 10:00 AM - 5:00 PM" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Links Section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-rose-500">Quick Links Section</h4>
+            <div className="grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="hp-footerLinksHeading" className="text-xs">Links Section Heading</Label>
+                <Input id="hp-footerLinksHeading" value={homePageContent.footerLinksHeading} onChange={(e) => setHomePageContent({ footerLinksHeading: e.target.value })} placeholder="Quick Links" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerLink1" className="text-xs">Link 1</Label>
+                  <Input id="hp-footerLink1" value={homePageContent.footerLink1} onChange={(e) => setHomePageContent({ footerLink1: e.target.value })} placeholder="About Us" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerLink2" className="text-xs">Link 2</Label>
+                  <Input id="hp-footerLink2" value={homePageContent.footerLink2} onChange={(e) => setHomePageContent({ footerLink2: e.target.value })} placeholder="Our Team" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerLink3" className="text-xs">Link 3</Label>
+                  <Input id="hp-footerLink3" value={homePageContent.footerLink3} onChange={(e) => setHomePageContent({ footerLink3: e.target.value })} placeholder="Gift Cards" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="hp-footerLink4" className="text-xs">Link 4</Label>
+                  <Input id="hp-footerLink4" value={homePageContent.footerLink4} onChange={(e) => setHomePageContent({ footerLink4: e.target.value })} placeholder="Privacy Policy" />
+                </div>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="hp-footerLink5" className="text-xs">Link 5</Label>
+                <Input id="hp-footerLink5" value={homePageContent.footerLink5} onChange={(e) => setHomePageContent({ footerLink5: e.target.value })} placeholder="Terms of Service" />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

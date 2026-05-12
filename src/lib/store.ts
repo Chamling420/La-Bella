@@ -110,6 +110,25 @@ export interface HomePageContent {
   ctaTitle: string;
   ctaDescription: string;
   ctaButtonText: string;
+
+  // Footer Section
+  footerBrandName: string;
+  footerBrandDescription: string;
+  footerContactHeading: string;
+  footerAddressLine1: string;
+  footerAddressLine2: string;
+  footerPhone: string;
+  footerEmail: string;
+  footerHoursHeading: string;
+  footerHoursWeekday: string;
+  footerHoursSaturday: string;
+  footerHoursSunday: string;
+  footerLinksHeading: string;
+  footerLink1: string;
+  footerLink2: string;
+  footerLink3: string;
+  footerLink4: string;
+  footerLink5: string;
 }
 
 const DEFAULT_HOME_PAGE_CONTENT: HomePageContent = {
@@ -142,6 +161,24 @@ const DEFAULT_HOME_PAGE_CONTENT: HomePageContent = {
   ctaTitle: "Ready to Transform Your Look?",
   ctaDescription: "Let our expert team create the perfect look for you. Book your appointment today and step into a world of beauty.",
   ctaButtonText: "Book Your Appointment Today",
+
+  footerBrandName: "La Bella",
+  footerBrandDescription: "Your premier destination for luxury beauty treatments. Experience the art of beauty with our expert team.",
+  footerContactHeading: "Contact Us",
+  footerAddressLine1: "123 Beauty Lane, Suite 100",
+  footerAddressLine2: "New York, NY 10001",
+  footerPhone: "(555) 123-4567",
+  footerEmail: "hello@labella.com",
+  footerHoursHeading: "Opening Hours",
+  footerHoursWeekday: "Mon - Fri: 9:00 AM - 8:00 PM",
+  footerHoursSaturday: "Saturday: 9:00 AM - 6:00 PM",
+  footerHoursSunday: "Sunday: 10:00 AM - 5:00 PM",
+  footerLinksHeading: "Quick Links",
+  footerLink1: "About Us",
+  footerLink2: "Our Team",
+  footerLink3: "Gift Cards",
+  footerLink4: "Privacy Policy",
+  footerLink5: "Terms of Service",
 };
 
 // ==================== DEFAULT DATA ====================
