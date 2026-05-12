@@ -63,7 +63,7 @@ server.log
 agent-ctx/
 download/
 examples/
-upload/
+/upload/
 db/
 dev.log
 
