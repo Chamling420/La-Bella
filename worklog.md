@@ -442,3 +442,25 @@ Stage Summary:
 - Unsaved changes warning protects against accidental navigation when dialogs are open or reply text is pending
 - Proper Zustand selectors used throughout for optimal re-render behavior
 - Browser beforeunload listener added for external navigation protection
+
+---
+Task ID: 8
+Agent: Main Developer
+Task: Fix missing upload API route, write comprehensive README, and push code to GitHub
+
+Work Log:
+- Discovered upload API route was missing (src/app/api/upload/route.ts did not exist)
+- Created upload API route with file validation (type + size), unique filename generation, and public/uploads storage
+- Updated README.md from "fix QR upload issue" to comprehensive documentation covering:
+  - Tech stack, all features, project structure, data persistence, getting started guide
+  - API endpoints documentation, default login credentials, key design decisions
+  - Complete list of recent changes and additions
+- Updated git remote URL with new GitHub token
+- Resolved branch divergence (local had correct codebase)
+- Force pushed to https://github.com/Chamling420/La-Bella.git
+- All lint checks pass clean
+
+Stage Summary:
+- Upload API route restored at src/app/api/upload/route.ts
+- README fully documented with all features, setup instructions, and change log
+- Code successfully pushed to GitHub repository
