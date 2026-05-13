@@ -13,6 +13,28 @@ interface ImageUploadProps {
   label?: string;
 }
 
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.heic', '.heif', '.bmp', '.avif'];
+const ALLOWED_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+  'image/svg+xml', 'image/heic', 'image/heif', 'image/bmp', 'image/avif',
+];
+
+function isAllowedFile(file: File): boolean {
+  if (file.type && ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+    return true;
+  }
+  // Fallback: check extension if MIME type is empty/unrecognized
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+  if (ext && ALLOWED_EXTENSIONS.includes(ext)) {
+    return true;
+  }
+  // If no MIME type and no recognizable extension, still allow (server will validate)
+  if (!file.type) {
+    return true;
+  }
+  return false;
+}
+
 export default function ImageUpload({ value, onChange, label = 'Product Image' }: ImageUploadProps) {
   const [mode, setMode] = useState<'upload' | 'url'>(
     value && value.startsWith('http') ? 'url' : 'upload'
@@ -22,16 +44,15 @@ export default function ImageUpload({ value, onChange, label = 'Product Image' }
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = useCallback(async (file: File) => {
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Invalid file type. Only JPEG, PNG, GIF, WebP, and SVG images are allowed.');
+    // Validate file type (lenient — server also validates)
+    if (!isAllowedFile(file)) {
+      toast.error('Invalid file type. Only image files are allowed (JPEG, PNG, GIF, WebP, SVG, HEIC, BMP, AVIF).');
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File too large. Maximum size is 5MB.');
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File too large. Maximum size is 10MB.');
       return;
     }
 
@@ -55,7 +76,7 @@ export default function ImageUpload({ value, onChange, label = 'Product Image' }
       toast.success('Image uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -129,7 +150,7 @@ export default function ImageUpload({ value, onChange, label = 'Product Image' }
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+            accept="image/*"
             className="hidden"
             onChange={handleFileSelect}
           />
@@ -221,7 +242,7 @@ export default function ImageUpload({ value, onChange, label = 'Product Image' }
                       or drag & drop here
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      JPEG, PNG, GIF, WebP, SVG (max 5MB)
+                      JPEG, PNG, GIF, WebP, SVG, HEIC (max 10MB)
                     </p>
                   </div>
                 </>
